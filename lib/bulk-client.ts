@@ -1,4 +1,4 @@
-const HTTP_BASE = process.env.NEXT_PUBLIC_BULK_HTTP || 'https://testnet-api.bulk.trade/api/v1';
+const HTTP_BASE = 'https://exchange-api.bulk.trade/api/v1';
 
 export async function fetchExchangeInfo() {
   const res = await fetch(`${HTTP_BASE}/exchangeInfo`);
@@ -31,5 +31,15 @@ export async function fetchAccount(userPubkey: string) {
     body: JSON.stringify({ type: 'fullAccount', user: userPubkey })
   });
   if (!res.ok) throw new Error('Failed to fetch account');
+  return res.json();
+}
+
+export async function fetchUserFills(userPubkey: string) {
+  const res = await fetch(`${HTTP_BASE}/user-fills`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user: userPubkey })
+  });
+  if (!res.ok) throw new Error('Failed to fetch user fills');
   return res.json();
 }

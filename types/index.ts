@@ -71,6 +71,17 @@ export interface FeeTier {
   takerBps: number;
 }
 
+export interface UserFill {
+  symbol: string;
+  isBuy: boolean;
+  price: number;
+  size: number;
+  time: number;
+  fee: number;
+  dir: 'Open' | 'Close';
+  orderId: string;
+}
+
 export interface AccountSnapshot {
   kind: 'MasterEOA' | 'SubAccount';
   margin: {

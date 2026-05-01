@@ -3,6 +3,7 @@ import { IBM_Plex_Sans, IBM_Plex_Sans_Condensed } from 'next/font/google';
 import './globals.css';
 import { Providers } from './Providers';
 import { AppLayout } from '../components/AppLayout';
+import { AccountUpdater } from '../components/AccountUpdater';
 
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ['latin'],
@@ -26,6 +27,7 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
     <html lang="en" className={`${ibmPlexSans.variable} ${ibmPlexSansCondensed.variable}`}>
       <body suppressHydrationWarning className="font-sans antialiased text-[#FFFEEF]">
         <Providers>
+          <AccountUpdater />
           <AppLayout>
             {children}
           </AppLayout>

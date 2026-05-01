@@ -10,65 +10,40 @@ import { fetchAccount } from '../../lib/bulk-client';
 export default function AgentPage() {
   const [intentInput, setIntentInput] = useState('');
   const { isGenerating, setGenerating, setCurrentPlan, currentPlan, logs, addLog, clearLogs } = useAgentStore();
-  const { isConnected, setConnected, snapshot, setSnapshot } = usePortfolioStore();
+  const { isConnected, snapshot } = usePortfolioStore();
   const wallet = useWallet();
-
-  useEffect(() => {
-    if (wallet.connected && wallet.publicKey) {
-      setConnected(true);
-      fetchAccount(wallet.publicKey.toBase58())
-        .then(data => setSnapshot(data))
-        .catch(err => {
-          console.error("Fetch account error via REST:", err);
-          setSnapshot({
-            kind: 'MasterEOA',
-            margin: { totalBalance: 100000, availableBalance: 100000, marginUsed: 0, notional: 0, realizedPnl: 0, unrealizedPnl: 0, fees: 0, funding: 0 },
-            positions: [],
-            openOrders: [],
-            subAccounts: [],
-            authorizedAgentWallets: [],
-            feeTiers: [],
-            leverageSettings: []
-          });
-        });
-    } else {
-      setConnected(false);
-      setSnapshot(null);
-    }
-  }, [wallet.connected, wallet.publicKey, setConnected, setSnapshot]);
 
   const handleDeployIntent = async () => {
     if (!intentInput.trim()) return;
     
     setGenerating(true);
     clearLogs();
-    addLog('Engine initialized. Parsing constraints...', 'sys');
+    addLog('Synthesizing intent with Claude 3.5 Sonnet...', 'sys');
     
     try {
-      const res = await fetch('/api/intent', {
+      const res = await fetch('/api/agent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: intentInput }), // API looks for prompt
+        body: JSON.stringify({ prompt: intentInput }),
       });
       
       const plan = await res.json();
       
       if (plan.error) {
-         throw new Error(plan.error);
+        throw new Error(plan.error);
       }
-      
-      addLog(`Intent parsed successfully. Confidence: ${plan.confidence}`, 'success');
       
       if (plan.legs) {
         plan.legs.forEach((leg: any, i: number) => {
-          if (!leg.id) leg.id = `leg_${Date.now()}_${i}`;
+          leg.id = `leg_${Date.now()}_${i}`;
           leg.status = 'queued';
         });
       }
       
+      addLog(`Intent parsed successfully. Confidence: ${plan.confidence}`, 'success');
       setCurrentPlan(plan);
     } catch (e: any) {
-      addLog(`Failed to parse intent: ${e.message}`, 'error');
+      addLog(`Failed to synthesize: ${e.message}`, 'error');
     } finally {
       setGenerating(false);
       setIntentInput('');
