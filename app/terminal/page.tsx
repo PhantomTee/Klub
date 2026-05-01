@@ -19,6 +19,7 @@ export default function TerminalPage() {
   const wallet = useWallet();
 
   const handleExecute = async () => {
+    console.log('Executing order:', { symbol, isBuy, size, leverage, orderType });
     if (!wallet.connected || !wallet.publicKey) {
       alert('Please connect your wallet first');
       return;
@@ -131,12 +132,12 @@ export default function TerminalPage() {
       {/* Bottom Half: Order Book and Order Entry */}
       <div className="flex flex-col md:flex-row gap-6 shrink-0 md:h-[40%] md:min-h-[300px]">
         {/* Order Entry (Moved up for mobile) */}
-        <div className="w-full md:w-[350px] bg-[#1B1A14] border border-[#2A2620] rounded-[2px] flex flex-col p-6 shadow-2xl order-1 md:order-2 z-10">
-          <div className="flex gap-1 mb-6 relative">
+        <div className="w-full md:w-[350px] bg-[#1B1A14] border border-[#2A2620] rounded-[2px] flex flex-col p-6 shadow-2xl order-1 md:order-2 relative z-30">
+          <div className="flex gap-1 mb-6">
             <button 
               type="button"
-              onClick={(e) => { e.preventDefault(); setIsBuy(true); }}
-              className={`flex-1 py-4 font-bold text-[11px] uppercase tracking-[0.2em] rounded-[0px] cursor-pointer touch-manipulation transition-all z-20 ${
+              onClick={(e) => { e.stopPropagation(); setIsBuy(true); }}
+              className={`flex-1 py-4 font-bold text-[11px] uppercase tracking-[0.2em] rounded-[0px] cursor-pointer transition-all border-none outline-none ${
                 isBuy ? 'bg-[#00B481] text-[#141310]' : 'bg-transparent border border-[#00B481]/30 text-[#00B481] hover:bg-[#00B481]/5'
               }`}
             >
@@ -144,8 +145,8 @@ export default function TerminalPage() {
             </button>
             <button 
               type="button"
-              onClick={(e) => { e.preventDefault(); setIsBuy(false); }}
-              className={`flex-1 py-4 font-bold text-[11px] uppercase tracking-[0.2em] rounded-[0px] cursor-pointer touch-manipulation transition-all z-20 ${
+              onClick={(e) => { e.stopPropagation(); setIsBuy(false); }}
+              className={`flex-1 py-4 font-bold text-[11px] uppercase tracking-[0.2em] rounded-[0px] cursor-pointer transition-all border-none outline-none ${
                 !isBuy ? 'bg-[#EF4A3C] text-[#141310]' : 'bg-transparent border border-[#EF4A3C]/30 text-[#EF4A3C] hover:bg-[#EF4A3C]/5'
               }`}
             >
@@ -188,7 +189,7 @@ export default function TerminalPage() {
                  step="1"
                  value={leverage}
                  onChange={e => setLeverage(parseInt(e.target.value))}
-                 className="w-full cursor-pointer h-2 bg-[#2A2620] rounded-full accent-[#FFB547]" 
+                 className="w-full h-2 bg-[#2A2620] rounded-full appearance-none accent-[#FFB547] cursor-pointer" 
                />
             </div>
             
@@ -197,9 +198,13 @@ export default function TerminalPage() {
                 type="button"
                 onClick={handleExecute}
                 disabled={executing || !wallet.connected}
-                className="w-full py-4 bg-[#FFB547] text-[#141310] font-bold text-[11px] uppercase tracking-[0.3em] rounded-[0px] hover:bg-[#D48F2A] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                className={`w-full py-4 font-bold text-[11px] uppercase tracking-[0.3em] rounded-[0px] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center ${
+                  isBuy 
+                    ? 'bg-[#00B481] text-[#141310] hover:bg-[#00966B]' 
+                    : 'bg-[#EF4A3C] text-[#141310] hover:bg-[#D63E32]'
+                }`}
               >
-                {executing ? <Loader2 className="animate-spin" size={16} /> : 'Execute Trade'}
+                {executing ? <Loader2 className="animate-spin" size={16} /> : `Execute ${isBuy ? 'Buy' : 'Sell'}`}
               </button>
             </div>
           </div>

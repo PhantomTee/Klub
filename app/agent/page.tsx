@@ -7,11 +7,16 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { validatePlan } from '../../lib/risk-guard';
 import { fetchAccount } from '../../lib/bulk-client';
 
-export default function AgentPage() {
-  const [intentInput, setIntentInput] = useState('');
-  const { isGenerating, setGenerating, setCurrentPlan, currentPlan, logs, addLog, clearLogs } = useAgentStore();
-  const { isConnected, snapshot } = usePortfolioStore();
-  const wallet = useWallet();
+import { Shield, ShieldAlert, ShieldCheck, Zap } from 'lucide-react';
+ 
+ export default function AgentPage() {
+   const [intentInput, setIntentInput] = useState('');
+   const { isGenerating, setGenerating, setCurrentPlan, currentPlan, logs, addLog, clearLogs } = useAgentStore();
+   const { isConnected, snapshot } = usePortfolioStore();
+   const wallet = useWallet();
+ 
+   const AGENT_PUBKEY = process.env.NEXT_PUBLIC_KLUB_AGENT_PUBLIC_KEY || 'KlubAgnt11111111111111111111111111111111111';
+   const isAuthorized = snapshot?.authorizedAgentWallets?.includes(AGENT_PUBKEY);
 
   const handleDeployIntent = async () => {
     if (!intentInput.trim()) return;
@@ -132,8 +137,53 @@ export default function AgentPage() {
     <div className="flex flex-col md:flex-row gap-6">
       {/* Left Pane - Intent Input & Code output */}
       <div className="flex-1 max-w-3xl">
-        <h2 className="text-xl font-medium mb-4">Intent Engine</h2>
-        <div className="p-4 bg-[#0F0F1A] border border-[#2A2A42] rounded-md mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-medium">Intent Engine</h2>
+          <div className={`flex items-center space-x-2 px-3 py-1 rounded-full border text-[10px] font-mono uppercase tracking-widest ${
+            isAuthorized ? 'bg-[#22D3A5]/10 border-[#22D3A5]/30 text-[#22D3A5]' : 'bg-[#EF4A3C]/10 border-[#EF4A3C]/30 text-[#EF4A3C]'
+          }`}>
+            {isAuthorized ? <ShieldCheck size={12} /> : <ShieldAlert size={12} />}
+            <span>Agent: {isAuthorized ? 'Authorized' : 'Unauthorized'}</span>
+          </div>
+        </div>
+
+        {/* Authorization Banner */}
+        {!isAuthorized && isConnected && (
+          <div className="mb-6 p-6 bg-[#EF4A3C]/5 border border-[#EF4A3C]/20 rounded-[2px] flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center space-x-3">
+              <Shield size={24} className="text-[#EF4A3C]" />
+              <div>
+                <p className="text-sm font-bold text-[#FFFEEF]">Authorization Required</p>
+                <p className="text-[10px] text-[#736A6C] max-w-md">To allow the AI to execute trades, you must delegate the agent's wallet on Bulk Trade. This provides a "signing session" without giving away control of your funds.</p>
+              </div>
+            </div>
+              <div className="flex flex-col items-end gap-2 shrink-0">
+              <div className="flex items-center bg-[#141310] border border-[#2A2620] px-3 py-1.5 rounded-[2px] shadow-sm">
+                <div className="flex flex-col items-end mr-3">
+                  <span className="text-[8px] text-[#736A6C] uppercase font-mono">Agent ID</span>
+                  <code className="text-[10px] text-[#FFB547] font-mono leading-tight">{AGENT_PUBKEY.slice(0, 8)}...{AGENT_PUBKEY.slice(-8)}</code>
+                </div>
+                <button 
+                  onClick={() => {
+                    navigator.clipboard.writeText(AGENT_PUBKEY);
+                    addLog('Agent Public Key copied to clipboard', 'sys');
+                  }}
+                  className="text-[9px] px-2 py-1 bg-[#2A2620] hover:bg-[#3A3630] uppercase tracking-widest text-[#FFFEEF] transition-colors rounded-[1px]"
+                >
+                  Copy
+                </button>
+              </div>
+              <button 
+                onClick={() => alert(`INSTRUCTIONS:\n1. Generate a Solana Keypair.\n2. Set NEXT_PUBLIC_KLUB_AGENT_PUBLIC_KEY in env.\n3. Set KLUB_AGENT_PRIVATE_KEY in env.\n4. Use this key (${AGENT_PUBKEY}) to authorize the agent on Bulk Trade.`)}
+                className="w-full px-4 py-2 bg-[#EF4A3C] text-[#141310] text-[10px] font-bold uppercase tracking-widest hover:bg-[#D63E32] transition-colors"
+              >
+                Setup Guide
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="p-4 bg-[#1B1A14] border border-[#2A2620] rounded-md mb-6">
           <textarea
             value={intentInput}
             onChange={(e) => setIntentInput(e.target.value)}
