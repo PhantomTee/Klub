@@ -18,9 +18,10 @@ export default function AgentPage() {
     
     setGenerating(true);
     clearLogs();
-    addLog('Synthesizing intent with Claude 3.5 Sonnet...', 'sys');
+    addLog(`Synthesizing intent: "${intentInput.slice(0, 30)}..."`, 'sys');
     
     try {
+      console.log('Sending intent to /api/agent:', intentInput);
       const res = await fetch('/api/agent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -28,6 +29,7 @@ export default function AgentPage() {
       });
       
       const plan = await res.json();
+      console.log('Received plan:', plan);
       
       if (plan.error) {
         throw new Error(plan.error);

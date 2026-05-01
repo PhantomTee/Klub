@@ -30,3 +30,49 @@
   background-color: var(--color-bg-base);
   color: var(--color-text-primary);
 }
+
+/* Custom Range Input Styles */
+input[type=range] {
+  -webkit-appearance: none;
+  background: transparent;
+}
+
+input[type=range]:focus {
+  outline: none;
+}
+
+input[type=range]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 4px;
+  cursor: pointer;
+  background: #2A2620;
+  border-radius: 2px;
+}
+
+input[type=range]::-webkit-slider-thumb {
+  height: 14px;
+  width: 14px;
+  border-radius: 50%;
+  background: #FFB547;
+  cursor: pointer;
+  -webkit-appearance: none;
+  margin-top: -5px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+}
+
+input[type=range]::-moz-range-track {
+  width: 100%;
+  height: 4px;
+  cursor: pointer;
+  background: #2A2620;
+  border-radius: 2px;
+}
+
+input[type=range]::-moz-range-thumb {
+  height: 14px;
+  width: 14px;
+  border-radius: 50%;
+  background: #FFB547;
+  cursor: pointer;
+  border: none;
+}

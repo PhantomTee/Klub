@@ -131,19 +131,21 @@ export default function TerminalPage() {
       {/* Bottom Half: Order Book and Order Entry */}
       <div className="flex flex-col md:flex-row gap-6 shrink-0 md:h-[40%] md:min-h-[300px]">
         {/* Order Entry (Moved up for mobile) */}
-        <div className="w-full md:w-[350px] bg-[#1B1A14] border border-[#2A2620] rounded-[2px] flex flex-col p-6 shadow-2xl order-1 md:order-2">
-          <div className="flex gap-1 mb-6">
+        <div className="w-full md:w-[350px] bg-[#1B1A14] border border-[#2A2620] rounded-[2px] flex flex-col p-6 shadow-2xl order-1 md:order-2 z-10">
+          <div className="flex gap-1 mb-6 relative">
             <button 
-              onClick={() => setIsBuy(true)}
-              className={`flex-1 py-3 font-bold text-[11px] uppercase tracking-[0.2em] rounded-[0px] transition-all ${
+              type="button"
+              onClick={(e) => { e.preventDefault(); setIsBuy(true); }}
+              className={`flex-1 py-4 font-bold text-[11px] uppercase tracking-[0.2em] rounded-[0px] cursor-pointer touch-manipulation transition-all z-20 ${
                 isBuy ? 'bg-[#00B481] text-[#141310]' : 'bg-transparent border border-[#00B481]/30 text-[#00B481] hover:bg-[#00B481]/5'
               }`}
             >
               Buy
             </button>
             <button 
-              onClick={() => setIsBuy(false)}
-              className={`flex-1 py-3 font-bold text-[11px] uppercase tracking-[0.2em] rounded-[0px] transition-all ${
+              type="button"
+              onClick={(e) => { e.preventDefault(); setIsBuy(false); }}
+              className={`flex-1 py-4 font-bold text-[11px] uppercase tracking-[0.2em] rounded-[0px] cursor-pointer touch-manipulation transition-all z-20 ${
                 !isBuy ? 'bg-[#EF4A3C] text-[#141310]' : 'bg-transparent border border-[#EF4A3C]/30 text-[#EF4A3C] hover:bg-[#EF4A3C]/5'
               }`}
             >
@@ -159,9 +161,9 @@ export default function TerminalPage() {
                  onChange={e => setOrderType(e.target.value)}
                  className="w-full bg-[#141310] border border-[#2A2620] px-3 py-2 rounded-[0px] text-[#FFFEEF] outline-none appearance-none cursor-pointer"
                >
-                 <option>Market</option>
-                 <option>Limit</option>
-                 <option>Stop Market</option>
+                 <option value="Market">Market</option>
+                 <option value="Limit">Limit</option>
+                 <option value="Stop Market">Stop Market</option>
                </select>
             </div>
             <div>
@@ -177,20 +179,22 @@ export default function TerminalPage() {
             <div>
                <div className="flex justify-between text-[10px] text-[#736A6C] uppercase tracking-[0.2em] mb-2">
                  <span>Leverage</span>
-                 <span className="text-[#FFB547]">{leverage}x</span>
+                 <span className="text-[#FFB547] font-bold">{leverage}x</span>
                </div>
                <input 
                  type="range" 
                  min="1" 
                  max="50" 
+                 step="1"
                  value={leverage}
                  onChange={e => setLeverage(parseInt(e.target.value))}
-                 className="w-full h-1 bg-[#2A2620] rounded-full appearance-none accent-[#FFB547] cursor-pointer" 
+                 className="w-full cursor-pointer h-2 bg-[#2A2620] rounded-full accent-[#FFB547]" 
                />
             </div>
             
             <div className="pt-4 border-t border-[#2A2620]">
               <button 
+                type="button"
                 onClick={handleExecute}
                 disabled={executing || !wallet.connected}
                 className="w-full py-4 bg-[#FFB547] text-[#141310] font-bold text-[11px] uppercase tracking-[0.3em] rounded-[0px] hover:bg-[#D48F2A] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
