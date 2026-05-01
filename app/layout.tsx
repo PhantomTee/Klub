@@ -2,6 +2,7 @@ import type {Metadata} from 'next';
 import { DM_Sans, Space_Mono, Playfair_Display } from 'next/font/google';
 import './globals.css';
 import { Providers } from './Providers';
+import { AppLayout } from '../components/AppLayout';
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
@@ -29,7 +30,9 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
     <html lang="en" className={`${dmSans.variable} ${spaceMono.variable} ${playfair.variable}`}>
       <body suppressHydrationWarning className="font-sans antialiased text-white">
         <Providers>
-          {children}
+          <AppLayout>
+            {children}
+          </AppLayout>
         </Providers>
       </body>
     </html>
