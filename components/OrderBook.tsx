@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 
 import { usePortfolioStore } from '../store/portfolioStore';
+import { fetchL2Book } from '../lib/bulk-client';
 
 interface OrderBookLevel {
   price: number;
@@ -20,13 +21,43 @@ export function OrderBook({ symbol }: OrderBookProps) {
   const [asks, setAsks] = useState<OrderBookLevel[]>([]);
   const [lastPrice, setLastPrice] = useState(0);
   const [priceChange, setPriceChange] = useState<'up' | 'down' | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
   const { setPrice } = usePortfolioStore();
 
   useEffect(() => {
     const coin = symbol.split('-')[0];
+    let isMounted = true;
+
+    // Fetch initial state
+    fetchL2Book(symbol).then(data => {
+      if (!isMounted) return;
+      
+      const processLevels = (levels: any[]) => {
+        let total = 0;
+        return (levels || []).map((l: any) => {
+          const px = parseFloat(l.px || l.price);
+          const sz = parseFloat(l.sz || l.size);
+          total += sz;
+          return { price: px, size: sz, total };
+        });
+      };
+
+      const initialBids = processLevels(data.bids || data.levels?.[0]);
+      const initialAsks = processLevels(data.asks || data.levels?.[1]).sort((a, b) => b.price - a.price);
+
+      setBids(initialBids);
+      setAsks(initialAsks);
+      
+      if (initialBids.length > 0 && initialAsks.length > 0) {
+        const mid = (initialBids[0].price + initialAsks[initialAsks.length - 1].price) / 2;
+        setLastPrice(mid);
+      }
+    }).catch(err => console.error('Initial L2 fetch error:', err));
+
     const ws = new WebSocket('wss://exchange-ws1.bulk.trade');
     
     ws.onopen = () => {
+      if (isMounted) setIsConnected(true);
       ws.send(JSON.stringify({
         method: "subscribe",
         subscription: { type: "l2Book", coin: coin }
@@ -34,6 +65,7 @@ export function OrderBook({ symbol }: OrderBookProps) {
     };
 
     ws.onmessage = (event) => {
+      if (!isMounted) return;
       try {
         const msg = JSON.parse(event.data);
         if (msg.channel === 'l2Book' && msg.data) {
@@ -72,16 +104,22 @@ export function OrderBook({ symbol }: OrderBookProps) {
       }
     };
 
+    ws.onclose = () => {
+      if (isMounted) setIsConnected(false);
+    };
+
     ws.onerror = (err) => {
       console.error('WS Error:', err);
+      if (isMounted) setIsConnected(true); // Retry or just show error
     };
 
     return () => {
+      isMounted = false;
       if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
         ws.close();
       }
     };
-  }, [symbol]);
+  }, [symbol, setPrice]);
 
   const maxTotal = Math.max(
     bids.length > 0 ? bids[bids.length - 1].total : 1,
@@ -115,11 +153,14 @@ export function OrderBook({ symbol }: OrderBookProps) {
 
         {/* Spread / Mid Price */}
         <div className="px-4 py-3 border-y border-[#2A2620] bg-[#141310] shrink-0 flex items-center justify-between">
-          <div className={`text-sm font-bold font-mono transition-colors duration-300 ${priceChange === 'up' ? 'text-[#00B481]' : 'text-[#EF4A3C]'}`}>
-            {lastPrice.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+          <div className="flex items-center space-x-3">
+            <div className={`text-sm font-bold font-mono transition-colors duration-300 ${priceChange === 'up' ? 'text-[#00B481]' : 'text-[#EF4A3C]'}`}>
+              {lastPrice > 0 ? lastPrice.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : '---'}
+            </div>
+            <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-[#00B481] shadow-[0_0_8px_#00B481]' : 'bg-[#EF4A3C] shadow-[0_0_8px_#EF4A3C]'}`} title={isConnected ? 'Live' : 'Disconnected'} />
           </div>
           <div className="text-[9px] font-mono text-[#544A4C] uppercase tracking-tighter">
-            Spread: <span className="text-[#C6B6BA]">{(asks[asks.length-1]?.price - bids[0]?.price).toFixed(1)}</span>
+            Spread: <span className="text-[#C6B6BA]">{asks.length > 0 && bids.length > 0 ? (asks[asks.length-1].price - bids[0].price).toFixed(1) : '---'}</span>
           </div>
         </div>
 
