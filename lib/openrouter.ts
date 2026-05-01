@@ -69,7 +69,7 @@ Rules:
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "google/gemini-2.5-flash", // model accessible through openrouter
+      model: "anthropic/claude-3.5-sonnet", 
       temperature: 0.05,
       response_format: { type: "json_object" },
       messages: [

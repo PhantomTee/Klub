@@ -1,6 +1,7 @@
 import type {Metadata} from 'next';
 import { DM_Sans, Space_Mono, Playfair_Display } from 'next/font/google';
 import './globals.css';
+import { Providers } from './Providers';
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
@@ -20,13 +21,17 @@ const playfair = Playfair_Display({
 
 export const metadata: Metadata = {
   title: 'Klub Studio App',
-  description: 'My Google AI Studio App',
+  description: 'Trade with intention.',
 };
 
 export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
     <html lang="en" className={`${dmSans.variable} ${spaceMono.variable} ${playfair.variable}`}>
-      <body suppressHydrationWarning className="font-sans antialiased">{children}</body>
+      <body suppressHydrationWarning className="font-sans antialiased text-white">
+        <Providers>
+          {children}
+        </Providers>
+      </body>
     </html>
   );
 }
