@@ -1,34 +1,30 @@
 import type {Metadata} from 'next';
-import { DM_Sans, Space_Mono, Playfair_Display } from 'next/font/google';
+import { IBM_Plex_Sans, IBM_Plex_Sans_Condensed } from 'next/font/google';
 import './globals.css';
 import { Providers } from './Providers';
 import { AppLayout } from '../components/AppLayout';
 
-const dmSans = DM_Sans({
+const ibmPlexSans = IBM_Plex_Sans({
   subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
   variable: '--font-sans',
 });
 
-const spaceMono = Space_Mono({
-  weight: ['400', '700'],
+const ibmPlexSansCondensed = IBM_Plex_Sans_Condensed({
   subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
   variable: '--font-mono',
 });
 
-const playfair = Playfair_Display({
-  subsets: ['latin'],
-  variable: '--font-serif',
-});
-
 export const metadata: Metadata = {
-  title: 'Klub Studio App',
+  title: '(Klub.) - Autonomous Liquidity',
   description: 'Trade with intention.',
 };
 
 export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
-    <html lang="en" className={`${dmSans.variable} ${spaceMono.variable} ${playfair.variable}`}>
-      <body suppressHydrationWarning className="font-sans antialiased text-white">
+    <html lang="en" className={`${ibmPlexSans.variable} ${ibmPlexSansCondensed.variable}`}>
+      <body suppressHydrationWarning className="font-sans antialiased text-[#FFFEEF]">
         <Providers>
           <AppLayout>
             {children}

@@ -1,9 +1,15 @@
+'use client';
+
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { motion, AnimatePresence } from 'motion/react';
+import { X } from 'lucide-react';
+import { useUIStore } from '../store/uiStore';
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { isSidebarOpen, setSidebarOpen } = useUIStore();
 
   const links = [
     { name: 'Dashboard', href: '/dashboard' },
@@ -15,29 +21,48 @@ export function Sidebar() {
   ];
 
   return (
-    <div className="fixed top-0 left-0 w-[240px] h-screen bg-[#0F0F1A] border-r border-[#2A2A42] flex flex-col z-20">
-      <div className="h-[52px] flex items-center px-4 shrink-0">
-        <span className="font-mono font-bold text-[18px] text-[#7B5CF0]">KLUB</span>
-      </div>
-      <nav className="flex-1 px-2 py-4 space-y-1">
-        {links.map((link) => {
-          const isActive = pathname === link.href || (pathname === '/' && link.href === '/dashboard');
-          return (
-            <Link
-              key={link.name}
-              href={link.href}
-              className={`flex items-center px-4 py-[10px] rounded-[6px] text-sm font-sans transition-colors ${
-                isActive ? 'bg-[#1E1E32] text-[#7B5CF0]' : 'text-[#8888AA] hover:bg-[#1E1E32] hover:text-[#EEEEFF]'
-              }`}
-            >
-              {link.name}
-            </Link>
-          );
-        })}
-      </nav>
-      <div className="p-4 border-t border-[#1A1A2E]">
-        <WalletMultiButton style={{ width: '100%', justifyContent: 'center', backgroundColor: '#1E1E32', border: '1px solid #2A2A42', fontSize: '12px', height: '40px', textTransform: 'uppercase', letterSpacing: '0.05em' }} />
-      </div>
-    </div>
+    <AnimatePresence>
+      {isSidebarOpen && (
+        <>
+          {/* Mobile/Overlay Backdrop managed in Layout but we can put it here if we want absolute control */}
+          <motion.div
+            initial={{ x: -240 }}
+            animate={{ x: 0 }}
+            exit={{ x: -240 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="fixed top-0 left-0 w-[240px] h-screen bg-[#141310] border-r border-[#2A2620] flex flex-col z-50 shadow-2xl"
+          >
+            <div className="h-[64px] flex items-center justify-between px-6 shrink-0 border-b border-[#2A2620]">
+              <span className="font-sans font-bold text-[18px] tracking-tight text-[#FFFEEF]">(Klub.)</span>
+              <button 
+                onClick={() => setSidebarOpen(false)}
+                className="text-[#736A6C] hover:text-[#FFFEEF] transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <nav className="flex-1 px-3 py-8 space-y-2">
+              {links.map((link) => {
+                const isActive = pathname === link.href || (pathname === '/' && link.href === '/dashboard');
+                return (
+                  <Link
+                    key={link.name}
+                    href={link.href}
+                    onClick={() => setSidebarOpen(false)}
+                    className={`flex items-center px-4 py-[10px] rounded-[2px] text-[11px] uppercase tracking-[0.15em] font-mono transition-all duration-200 ${
+                      isActive 
+                        ? 'bg-[#1B1A14] text-[#FFB547] border-l-2 border-[#FFB547]' 
+                        : 'text-[#C6B6BA] hover:text-[#FFFEEF] hover:bg-[#1B1A14]'
+                    }`}
+                  >
+                    {link.name}
+                  </Link>
+                );
+              })}
+            </nav>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
   );
 }

@@ -171,7 +171,7 @@ export default function AgentPage() {
             <button 
               onClick={handleDeployIntent}
               disabled={isGenerating || !intentInput.trim()}
-              className="px-6 py-2 bg-[#7B5CF0] text-[#EEEEFF] font-sans font-medium text-sm rounded-[6px] hover:bg-[#4A3A90] disabled:opacity-50 transition-colors"
+              className="px-6 py-2 bg-[#FFB547] text-[#141310] font-sans font-bold text-sm rounded-[2px] hover:bg-[#D48F2A] disabled:opacity-50 transition-colors uppercase tracking-[0.11em]"
             >
               {isGenerating ? 'PARSING...' : 'GENERATE PLAN'}
             </button>
@@ -179,7 +179,7 @@ export default function AgentPage() {
         </div>
 
         {currentPlan && (
-          <div className="p-6 bg-[#0F0F1A] border-l-4 border-[#7B5CF0] rounded-r-md">
+          <div className="p-6 bg-[#1B1A14] border-l-4 border-[#FFB547] rounded-r-[2px]">
             <div className="flex justify-between items-start mb-4">
               <div>
                 <h3 className="text-sm font-medium text-[#EEEEFF] mb-1">Generated Trade Plan</h3>
@@ -211,11 +211,11 @@ export default function AgentPage() {
             <div className="flex space-x-4">
               <button 
                 onClick={handleExecute}
-                className="flex-1 py-2 bg-[#7B5CF0] text-[#EEEEFF] font-sans font-medium text-sm rounded-[6px] hover:bg-[#4A3A90] transition-colors"
+                className="flex-1 py-2 bg-[#FFB547] text-[#141310] font-sans font-bold text-sm rounded-[2px] hover:bg-[#D48F2A] transition-colors uppercase tracking-[0.11em]"
               >
                 Approve & Queue All
               </button>
-              <button className="px-6 py-2 bg-transparent text-[#F0524F] border border-[#F0524F]/30 font-sans font-medium text-sm rounded-[6px] hover:bg-[#F0524F]/10 transition-colors">
+              <button className="px-6 py-2 bg-transparent text-[#F0524F] border border-[#F0524F]/30 font-sans font-medium text-sm rounded-[2px] hover:bg-[#F0524F]/10 transition-colors uppercase tracking-[0.11em]">
                 Reject
               </button>
             </div>

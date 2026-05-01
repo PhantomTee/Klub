@@ -1,30 +1,29 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: var(--font-sans), 'DM Sans', sans-serif;
-  --font-mono: var(--font-mono), 'Space Mono', monospace;
-  --font-serif: var(--font-serif), 'Playfair Display', serif;
+  --font-sans: var(--font-sans), 'IBM Plex Sans', sans-serif;
+  --font-mono: var(--font-mono), 'IBM Plex Sans Condensed', monospace;
 
-  --color-bg-base: #07070D;
-  --color-bg-panel: #0F0F1A;
-  --color-bg-surface: #16162A;
-  --color-bg-hover: #1E1E32;
-  --color-border: #2A2A42;
-  --color-border-subtle: #1A1A2E;
+  --color-bg-base: #141310;
+  --color-bg-panel: #1B1A14;
+  --color-bg-surface: #544A4C;
+  --color-bg-hover: #1B1A14;
+  --color-border: #2A2620;
+  --color-border-subtle: #1B1A14;
   
-  --color-text-primary: #EEEEFF;
-  --color-text-secondary: #8888AA;
-  --color-text-tertiary: #555570;
+  --color-text-primary: #FFFEEF;
+  --color-text-secondary: #C6B6BA;
+  --color-text-tertiary: #736A6C;
   
-  --color-accent: #7B5CF0;
-  --color-accent-dim: #4A3A90;
+  --color-accent: #FFB547;
+  --color-accent-dim: #D48F2A;
   
-  --color-success: #22D3A5;
-  --color-danger: #F0524F;
-  --color-warning: #E8A035;
+  --color-success: #00B481;
+  --color-danger: #EF4A3C;
+  --color-warning: #FFB547;
   
-  --color-chart-up: #22D3A5;
-  --color-chart-down: #F0524F;
+  --color-chart-up: #00B481;
+  --color-chart-down: #EF4A3C;
 }
 
 :root {

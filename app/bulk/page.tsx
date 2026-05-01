@@ -1,10 +1,10 @@
 export default function BulkTradesPage() {
   return (
     <div>
-      <h2 className="text-xl font-medium mb-4">Bulk Trade Queue</h2>
-      <div className="p-4 bg-[#0F0F1A] border border-[#2A2A42] rounded-md min-h-[400px]">
-        <div className="text-xs text-[#8888AA] uppercase tracking-widest mb-4 font-mono">Pending Execution Queue</div>
-        <div className="text-[#555570] text-sm text-center py-8">Queue is empty</div>
+      <h2 className="text-xl font-bold mb-8 text-[#FFFEEF]">Bulk Trade Queue</h2>
+      <div className="p-6 bg-[#1B1A14] border border-[#2A2620] rounded-[2px] min-h-[400px]">
+        <div className="text-[10px] text-[#736A6C] uppercase tracking-[0.2em] mb-6 font-mono border-b border-[#2A2620] pb-2">Pending Execution Queue</div>
+        <div className="text-[#736A6C] text-[11px] font-mono text-center py-12 uppercase tracking-[0.2em]">Queue is empty</div>
       </div>
     </div>
   );

@@ -16,23 +16,23 @@ export function TradingChart({ symbol = 'BTC-USD', interval = '1m' }: { symbol?:
 
     const chart = createChart(chartContainerRef.current, {
       layout: {
-        background: { type: ColorType.Solid, color: '#07070D' },
-        textColor: '#8888AA',
+        background: { type: ColorType.Solid, color: '#000000' },
+        textColor: '#C6B6BA',
       },
       grid: {
-        vertLines: { color: '#1A1A2E' },
-        horzLines: { color: '#1A1A2E' },
+        vertLines: { color: '#1B1A14' },
+        horzLines: { color: '#1B1A14' },
       },
       width: chartContainerRef.current.clientWidth,
       height: chartContainerRef.current.clientHeight,
     });
 
     const series = chart.addSeries(CandlestickSeries, {
-      upColor: '#22D3A5',
-      downColor: '#F0524F',
+      upColor: '#00B481',
+      downColor: '#EF4A3C',
       borderVisible: false,
-      wickUpColor: '#22D3A5',
-      wickDownColor: '#F0524F',
+      wickUpColor: '#00B481',
+      wickDownColor: '#EF4A3C',
     });
 
     chartRef.current = chart;

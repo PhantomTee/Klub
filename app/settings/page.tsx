@@ -97,7 +97,7 @@ export default function SettingsPage() {
               <button 
                 onClick={handleRegisterAgent}
                 disabled={loading}
-                className="px-4 py-2 bg-[#7B5CF0] text-[#EEEEFF] font-sans font-medium text-sm rounded-[6px] hover:bg-[#4A3A90] disabled:opacity-50 transition-colors"
+                className="px-4 py-2 bg-[#FFB547] text-[#141310] font-sans font-bold text-sm rounded-[2px] hover:bg-[#D48F2A] disabled:opacity-50 transition-colors uppercase tracking-[0.11em]"
               >
                 {loading ? 'Processing...' : 'Generate & Register Agent'}
               </button>

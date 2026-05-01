@@ -1,6 +1,6 @@
 {
-  "name": "Klub",
-  "description": "Intent-Based Bulk Trading Agent on Bulk Trade (Solana Perpetuals)",
+  "name": "(Klub.)",
+  "description": "Autonomous Liquidity and Intent-Based Trading on Solana Perpetuals",
   "requestFramePermissions": [],
   "majorCapabilities": []
 }

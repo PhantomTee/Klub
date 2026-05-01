@@ -1,11 +1,11 @@
 export default function HistoryPage() {
   return (
     <div>
-      <h2 className="text-xl font-medium mb-4">Trade History</h2>
-      <div className="p-4 bg-[#0F0F1A] border border-[#2A2A42] rounded-md min-h-[400px]">
-        <table className="w-full text-left text-sm">
+      <h2 className="text-xl font-bold mb-8 text-[#FFFEEF]">Trade History</h2>
+      <div className="p-6 bg-[#1B1A14] border border-[#2A2620] rounded-[2px] min-h-[400px]">
+        <table className="w-full text-left text-[11px] font-mono">
           <thead>
-            <tr className="text-[#555570] font-medium border-b border-[#1A1A2E] text-xs uppercase tracking-widest">
+            <tr className="text-[#C6B6BA] font-medium border-b border-[#2A2620] uppercase tracking-[0.2em]">
               <th className="py-2">Date</th>
               <th className="py-2">Market</th>
               <th className="py-2">Type</th>
@@ -18,7 +18,7 @@ export default function HistoryPage() {
           </thead>
           <tbody>
             <tr>
-              <td colSpan={8} className="py-6 text-[#555570] text-center text-xs">No trade history found</td>
+              <td colSpan={8} className="py-12 text-[#736A6C] text-center uppercase tracking-[0.2em]">No trade history found</td>
             </tr>
           </tbody>
         </table>
