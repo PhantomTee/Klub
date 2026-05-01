@@ -128,7 +128,7 @@ export default function AgentPage() {
         return { m: { c: leg.symbol, b: isBuy, sz, r: false, i: false } };
       });
       
-      addLog(`Submitting transaction to Bulk Trade (0x...${wallet.publicKey.toBase58().slice(-4)})`, 'sys');
+      addLog(`Submitting transaction to Bulk Trade DEX (0x...${wallet.publicKey.toBase58().slice(-4)})`, 'sys');
       
       const res = await fetch('/api/execute', {
         method: 'POST',
@@ -213,7 +213,7 @@ export default function AgentPage() {
                 onClick={handleExecute}
                 className="flex-1 py-2 bg-[#FFB547] text-[#141310] font-sans font-bold text-sm rounded-[2px] hover:bg-[#D48F2A] transition-colors uppercase tracking-[0.11em]"
               >
-                Approve & Queue All
+                Approve & Execute All
               </button>
               <button className="px-6 py-2 bg-transparent text-[#F0524F] border border-[#F0524F]/30 font-sans font-medium text-sm rounded-[2px] hover:bg-[#F0524F]/10 transition-colors uppercase tracking-[0.11em]">
                 Reject

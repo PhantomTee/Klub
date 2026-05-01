@@ -15,7 +15,7 @@ export function Sidebar() {
     { name: 'Dashboard', href: '/dashboard' },
     { name: 'Terminal', href: '/terminal' },
     { name: 'Agent', href: '/agent' },
-    { name: 'Bulk Trades', href: '/bulk' },
+    { name: 'Execution', href: '/bulk' },
     { name: 'History', href: '/history' },
     { name: 'Settings', href: '/settings' },
   ];
@@ -33,7 +33,9 @@ export function Sidebar() {
             className="fixed top-0 left-0 w-[240px] h-screen bg-[#141310] border-r border-[#2A2620] flex flex-col z-50 shadow-2xl"
           >
             <div className="h-[64px] flex items-center justify-between px-6 shrink-0 border-b border-[#2A2620]">
-              <span className="font-sans font-bold text-[18px] tracking-tight text-[#FFFEEF]">(Klub.)</span>
+              <Link href="/" onClick={() => setSidebarOpen(false)} className="font-sans font-bold text-[18px] tracking-tight text-[#FFFEEF] hover:opacity-80 transition-opacity">
+                (Klub.)
+              </Link>
               <button 
                 onClick={() => setSidebarOpen(false)}
                 className="text-[#736A6C] hover:text-[#FFFEEF] transition-colors"

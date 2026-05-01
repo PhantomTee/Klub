@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { usePortfolioStore } from '../store/portfolioStore';
 import { Menu } from 'lucide-react';
 import { useUIStore } from '../store/uiStore';
@@ -8,7 +9,8 @@ export function TopBar() {
   const { snapshot } = usePortfolioStore();
   const { toggleSidebar } = useUIStore();
   const balance = snapshot?.margin?.totalBalance?.toLocaleString() || '0';
-  const mrkPrice = "98,421.50"; // Mock
+  const { prices } = usePortfolioStore();
+  const mrkPrice = prices['BTC-USD'] ? prices['BTC-USD'].toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "---";
 
   return (
     <div className="fixed top-0 left-0 right-0 h-[64px] bg-[#141310] border-b border-[#2A2620] z-40 flex items-center justify-between px-6 md:px-10">
@@ -19,7 +21,7 @@ export function TopBar() {
         >
           <Menu size={20} />
         </button>
-        <span className="font-sans font-bold text-[16px] tracking-tight text-[#FFFEEF] md:hidden">(Klub.)</span>
+        <Link href="/" className="font-sans font-bold text-[16px] tracking-tight text-[#FFFEEF] md:hidden hover:opacity-80 transition-opacity">(Klub.)</Link>
       </div>
 
       <div className="flex items-center space-x-6 md:space-x-8">
