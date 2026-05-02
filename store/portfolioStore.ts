@@ -7,6 +7,7 @@ interface PortfolioStore {
   prices: Record<string, number>;
   setSnapshot: (s: AccountSnapshot) => void;
   updatePosition: (symbol: string, patch: Partial<BulkPosition>) => void;
+  updateMargin: (margin: any) => void;
   updateOrder: (order: any) => void;
   removeOrder: (orderId: string) => void;
   setConnected: (v: boolean) => void;
@@ -20,10 +21,20 @@ export const usePortfolioStore = create<PortfolioStore>((set) => ({
   setSnapshot: (s) => set({ snapshot: s }),
   updatePosition: (symbol, patch) => set((state) => {
     if (!state.snapshot) return state;
+    const existing = state.snapshot.positions.find(p => p.symbol === symbol);
+    if (!existing) {
+      const positions = [...state.snapshot.positions, { symbol, ...patch } as BulkPosition];
+      return { snapshot: { ...state.snapshot, positions } };
+    }
     const positions = state.snapshot.positions.map(p => 
       p.symbol === symbol ? { ...p, ...patch } : p
-    );
+    ).filter(p => Math.abs(p.size) > 0);
     return { snapshot: { ...state.snapshot, positions } };
+  }),
+  updateMargin: (marginUpdate) => set((state) => {
+    if (!state.snapshot) return state;
+    const margin = { ...state.snapshot.margin, ...marginUpdate };
+    return { snapshot: { ...state.snapshot, margin } };
   }),
   updateOrder: (update) => set((state) => {
     if (!state.snapshot) return state;

@@ -139,7 +139,7 @@ export default function TerminalPage() {
       </div>
 
       {/* Top Half: Chart & Tools */}
-      <div className={`flex-1 min-h-[400px] md:min-h-[50%] bg-bg-panel border border-border flex flex-col rounded-[2px] overflow-hidden ${activeMobileTab !== 'chart' ? 'hidden md:flex' : 'flex'}`}>
+      <div className={`flex-1 min-h-[300px] bg-bg-panel border border-border flex flex-col rounded-[2px] overflow-hidden ${activeMobileTab !== 'chart' ? 'hidden md:flex' : 'flex'}`}>
         <div className="h-[44px] flex items-center px-4 border-b border-border space-x-6 shrink-0 bg-bg-base">
           <div className="flex items-center space-x-3">
             <select 
@@ -205,7 +205,7 @@ export default function TerminalPage() {
       </div>
 
       {/* Bottom Half: Order Book, Recent Trades and Order Entry */}
-      <div className={`flex flex-col md:flex-row gap-6 shrink-0 h-auto md:h-[350px] ${activeMobileTab === 'chart' ? 'hidden md:flex' : 'flex'}`}>
+      <div className={`flex flex-col md:flex-row gap-6 shrink-0 h-auto md:h-[280px] ${activeMobileTab === 'chart' ? 'hidden md:flex' : 'flex'}`}>
         {/* Order Entry */}
         <div className={`w-full md:w-[320px] bg-bg-panel border border-border rounded-[2px] flex flex-col p-5 shadow-2xl order-1 md:order-3 relative z-30 shrink-0 ${activeMobileTab !== 'order' ? 'hidden md:flex' : 'flex'}`}>
           <div className="flex gap-1 mb-5">
@@ -229,59 +229,61 @@ export default function TerminalPage() {
             </button>
           </div>
 
-          <div className="space-y-6 text-[11px] font-mono mt-2">
-            <div>
-               <label className="text-[10px] text-text-tertiary uppercase tracking-[0.2em] block mb-2">Order Type</label>
-               <select 
-                 value={orderType}
-                 onChange={e => setOrderType(e.target.value)}
-                 className="w-full bg-bg-base border border-border px-3 py-2 rounded-[0px] text-text-primary outline-none appearance-none cursor-pointer"
-               >
-                 <option value="Market">Market</option>
-                 <option value="Limit">Limit</option>
-                 <option value="Stop Market">Stop Market</option>
-               </select>
-            </div>
-            <div>
-               <label className="text-[10px] text-text-tertiary uppercase tracking-[0.2em] block mb-2">Size (USD)</label>
-               <input 
-                 type="text" 
-                 value={size}
-                 onChange={e => setSize(e.target.value)}
-                 placeholder="0.00" 
-                 className="w-full bg-bg-base border border-border px-3 py-2 rounded-[0px] text-text-primary outline-none font-mono" 
-               />
-            </div>
-            <div>
-               <div className="flex justify-between text-[10px] text-text-tertiary uppercase tracking-[0.2em] mb-2">
-                 <span>Leverage</span>
-                 <span className="text-accent font-bold">{leverage}x</span>
-               </div>
-               <input 
-                 type="range" 
-                 min="1" 
-                 max="50" 
-                 step="1"
-                 value={leverage}
-                  onChange={e => setLeverage(parseInt(e.target.value))}
-                 className="w-full h-2 bg-border rounded-full appearance-none accent-accent cursor-pointer" 
-               />
-            </div>
-            
-            {snapshot?.feeTiers?.[0] && (
-               <div className="flex justify-between items-center text-[9px] text-text-tertiary mb-2 border border-border p-2 bg-black/10">
-                 <div className="flex flex-col">
-                   <span className="uppercase tracking-widest text-[#544A4C]">Tier {(snapshot.feeTiers[0].tierIndex || 0) + 1} Fees</span>
-                   <span>M: {snapshot.feeTiers[0].makerBps}bps / T: {snapshot.feeTiers[0].takerBps}bps</span>
+          <div className="flex-1 flex flex-col text-[11px] font-mono mt-2 overflow-y-auto no-scrollbar">
+            <div className="space-y-6">
+              <div>
+                 <label className="text-[10px] text-text-tertiary uppercase tracking-[0.2em] block mb-2">Order Type</label>
+                 <select 
+                   value={orderType}
+                   onChange={e => setOrderType(e.target.value)}
+                   className="w-full bg-bg-base border border-border px-3 py-2 rounded-[0px] text-text-primary outline-none appearance-none cursor-pointer"
+                 >
+                   <option value="Market">Market</option>
+                   <option value="Limit">Limit</option>
+                   <option value="Stop Market">Stop Market</option>
+                 </select>
+              </div>
+              <div>
+                 <label className="text-[10px] text-text-tertiary uppercase tracking-[0.2em] block mb-2">Size (USD)</label>
+                 <input 
+                   type="text" 
+                   value={size}
+                   onChange={e => setSize(e.target.value)}
+                   placeholder="0.00" 
+                   className="w-full bg-bg-base border border-border px-3 py-2 rounded-[0px] text-text-primary outline-none font-mono" 
+                 />
+              </div>
+              <div>
+                 <div className="flex justify-between text-[10px] text-text-tertiary uppercase tracking-[0.2em] mb-2">
+                   <span>Leverage</span>
+                   <span className="text-accent font-bold">{leverage}x</span>
                  </div>
-                 <div className="flex flex-col text-right">
-                   <span className="uppercase tracking-widest text-[#544A4C]">14d Vol</span>
-                   <span className="text-accent">${((snapshot.feeTiers[0].rollingVolume || 0) / 1e6).toFixed(1)}M</span>
+                 <input 
+                   type="range" 
+                   min="1" 
+                   max="50" 
+                   step="1"
+                   value={leverage}
+                    onChange={e => setLeverage(parseInt(e.target.value))}
+                   className="w-full h-2 bg-border rounded-full appearance-none accent-accent cursor-pointer" 
+                 />
+              </div>
+              
+              {snapshot?.feeTiers?.[0] && (
+                 <div className="flex justify-between items-center text-[9px] text-text-tertiary mb-2 border border-border p-2 bg-black/10">
+                   <div className="flex flex-col">
+                     <span className="uppercase tracking-widest text-[#544A4C]">Tier {(snapshot.feeTiers[0].tierIndex || 0) + 1} Fees</span>
+                     <span>M: {snapshot.feeTiers[0].makerBps}bps / T: {snapshot.feeTiers[0].takerBps}bps</span>
+                   </div>
+                   <div className="flex flex-col text-right">
+                     <span className="uppercase tracking-widest text-[#544A4C]">14d Vol</span>
+                     <span className="text-accent">${((snapshot.feeTiers[0].rollingVolume || 0) / 1e6).toFixed(1)}M</span>
+                   </div>
                  </div>
-               </div>
-            )}
+              )}
+            </div>
 
-            <div className="pt-4 border-t border-border">
+            <div className="pt-4 border-t border-border mt-auto shrink-0">
               <button 
                 type="button"
                 onClick={handleExecute}

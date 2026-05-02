@@ -252,7 +252,7 @@ export function TradeTabs() {
   };
 
   return (
-    <div className="flex-1 bg-bg-panel border border-border rounded-[2px] flex flex-col overflow-hidden min-h-[300px]">
+    <div className="bg-bg-panel border border-border rounded-[2px] flex flex-col overflow-hidden h-[250px] shrink-0">
       <div className="flex border-b border-border bg-bg-base shrink-0">
         {(['positions', 'orders', 'history'] as const).map((tab) => (
           <button

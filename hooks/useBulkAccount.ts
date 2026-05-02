@@ -5,13 +5,13 @@ import { usePortfolioStore } from '../store/portfolioStore';
 import { AccountSnapshot } from '../types';
 
 export function useBulkAccount(userPubkey: string | undefined) {
-  const { setSnapshot, setConnected, updateOrder } = usePortfolioStore();
+  const { setSnapshot, setConnected, updateOrder, updatePosition, updateMargin } = usePortfolioStore();
   const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
     if (!userPubkey) {
       setConnected(false);
-      setSnapshot(null);
+      setSnapshot(null as any);
       return;
     }
 
@@ -35,6 +35,14 @@ export function useBulkAccount(userPubkey: string | undefined) {
             setSnapshot(msg.data as AccountSnapshot);
           } else if (msg.data.type === 'orderUpdate') {
             updateOrder(msg.data);
+          } else if (msg.data.type === 'positionUpdate') {
+            const { type, ...patch } = msg.data;
+            updatePosition(msg.data.symbol, patch);
+          } else if (msg.data.type === 'marginUpdate') {
+            const { type, ...patch } = msg.data;
+            updateMargin(patch);
+          } else if (msg.data.type === 'feeTierUpdate') {
+            // handle fee tier update
           }
         }
       } catch (e) {

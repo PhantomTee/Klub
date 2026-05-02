@@ -21,9 +21,11 @@ export async function POST(req: Request) {
     
     const decoratedActions = actions.map((a: any) => {
       // Embed PFOF Referral code
-      const tag = process.env.BULK_REFERRAL_CODE || 'AI-STUDIO';
-      if (a.m) return { m: { ...a.m, t: tag } };
-      if (a.l) return { l: { ...a.l, t: tag } };
+      const tag = process.env.BULK_REFERRAL_CODE;
+      if (tag) {
+        if (a.m) return { m: { ...a.m, t: tag } };
+        if (a.l) return { l: { ...a.l, t: tag } };
+      }
       return a;
     });
 

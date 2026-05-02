@@ -38,24 +38,6 @@ export function TradingChart({ symbol = 'BTC-USD', interval = '1m' }: { symbol?:
     seriesRef.current = series;
     dataSetRef.current = false;
 
-    // Fetch initial candles via REST endpoint as fallback
-    fetch(`${process.env.NEXT_PUBLIC_BULK_HTTP || 'https://exchange-api.bulk.trade/api/v1'}/klines?symbol=${symbol}&interval=${interval}`)
-      .then(res => res.json())
-      .then(data => {
-        if (!dataSetRef.current && data && data.length > 0) {
-          const lwcData = data.map((c: any) => ({
-            time: Math.floor(c.t / 1000) as UTCTimestamp,
-            open: c.o,
-            high: c.h,
-            low: c.l,
-            close: c.c
-          }));
-          series.setData(lwcData);
-          dataSetRef.current = true;
-        }
-      })
-      .catch(console.error);
-
     const wsUrl = process.env.NEXT_PUBLIC_BULK_WS || 'wss://exchange-ws1.bulk.trade';
     const ws = new WebSocket(wsUrl);
 
@@ -118,19 +100,16 @@ export function TradingChart({ symbol = 'BTC-USD', interval = '1m' }: { symbol?:
       }
     }, 30000);
 
-    const handleResize = () => {
-      if (chartContainerRef.current && chartRef.current) {
-        chartRef.current.applyOptions({
-          width: chartContainerRef.current.clientWidth,
-          height: chartContainerRef.current.clientHeight,
-        });
-      }
-    };
+    const resizeObserver = new ResizeObserver(entries => {
+      if (entries.length === 0 || entries[0].target !== chartContainerRef.current) return;
+      const newRect = entries[0].contentRect;
+      chart.applyOptions({ height: newRect.height, width: newRect.width });
+    });
 
-    window.addEventListener('resize', handleResize);
+    resizeObserver.observe(chartContainerRef.current);
 
     return () => {
-      window.removeEventListener('resize', handleResize);
+      resizeObserver.disconnect();
       clearInterval(pingInterval);
       ws.close();
       chart.remove();
