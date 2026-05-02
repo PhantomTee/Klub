@@ -15,7 +15,7 @@ export function useBulkAccount(userPubkey: string | undefined) {
       return;
     }
 
-    const wsUrl = process.env.NEXT_PUBLIC_BULK_WS || 'wss://exchange-ws1.bulk.trade';
+    const wsUrl = 'wss://exchange-ws1.bulk.trade';
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
@@ -50,18 +50,11 @@ export function useBulkAccount(userPubkey: string | undefined) {
       }
     };
 
-    const pingInterval = setInterval(() => {
-      if (ws.readyState === WebSocket.OPEN) {
-         ws.send(JSON.stringify({ method: 'ping' }));
-      }
-    }, 30000);
-
     ws.onclose = () => {
       setConnected(false);
     };
 
     return () => {
-      clearInterval(pingInterval);
       ws.close();
     };
   }, [userPubkey, setSnapshot, setConnected]);

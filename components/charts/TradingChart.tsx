@@ -38,7 +38,7 @@ export function TradingChart({ symbol = 'BTC-USD', interval = '1m' }: { symbol?:
     seriesRef.current = series;
     dataSetRef.current = false;
 
-    const wsUrl = process.env.NEXT_PUBLIC_BULK_WS || 'wss://exchange-ws1.bulk.trade';
+    const wsUrl = 'wss://exchange-ws1.bulk.trade';
     const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
@@ -94,12 +94,6 @@ export function TradingChart({ symbol = 'BTC-USD', interval = '1m' }: { symbol?:
       } catch (e) {}
     };
 
-    const pingInterval = setInterval(() => {
-      if (ws.readyState === WebSocket.OPEN) {
-         ws.send(JSON.stringify({ method: 'ping' }));
-      }
-    }, 30000);
-
     const resizeObserver = new ResizeObserver(entries => {
       if (entries.length === 0 || entries[0].target !== chartContainerRef.current) return;
       const newRect = entries[0].contentRect;
@@ -110,7 +104,6 @@ export function TradingChart({ symbol = 'BTC-USD', interval = '1m' }: { symbol?:
 
     return () => {
       resizeObserver.disconnect();
-      clearInterval(pingInterval);
       ws.close();
       chart.remove();
       chartRef.current = null;
@@ -119,7 +112,7 @@ export function TradingChart({ symbol = 'BTC-USD', interval = '1m' }: { symbol?:
   }, [symbol, interval]);
 
   return (
-    <div className="relative w-full h-full min-h-[300px]">
+    <div className="relative w-full h-full min-h-0">
       <div ref={chartContainerRef} className="w-full h-full absolute inset-0" />
       <div className="absolute bottom-2 left-2 pointer-events-none select-none px-2 py-1 bg-black/40 rounded-[2px] text-[10px] text-text-tertiary font-mono z-10 border border-white/5">
         Alt+Click to draw line

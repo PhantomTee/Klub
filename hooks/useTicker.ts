@@ -18,7 +18,7 @@ export function useTicker(symbol: string) {
   const [ticker, setTicker] = useState<TickerData | null>(null);
 
   useEffect(() => {
-    const wsUrl = process.env.NEXT_PUBLIC_BULK_WS || 'wss://exchange-ws1.bulk.trade';
+    const wsUrl = 'wss://exchange-ws1.bulk.trade';
     const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
@@ -48,14 +48,7 @@ export function useTicker(symbol: string) {
       } catch (e) {}
     };
 
-    const pingInterval = setInterval(() => {
-      if (ws.readyState === WebSocket.OPEN) {
-         ws.send(JSON.stringify({ method: 'ping' }));
-      }
-    }, 30000);
-
     return () => {
-      clearInterval(pingInterval);
       ws.close();
     };
   }, [symbol]);

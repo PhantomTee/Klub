@@ -54,7 +54,7 @@ export function OrderBook({ symbol }: OrderBookProps) {
       }
     }).catch(err => console.error('Initial L2 fetch error:', err));
 
-    const wsUrl = process.env.NEXT_PUBLIC_BULK_WS || 'wss://exchange-ws1.bulk.trade';
+    const wsUrl = 'wss://exchange-ws1.bulk.trade';
     const ws = new WebSocket(wsUrl);
     
     ws.onopen = () => {
@@ -106,12 +106,6 @@ export function OrderBook({ symbol }: OrderBookProps) {
       }
     };
 
-    const pingInterval = setInterval(() => {
-      if (ws.readyState === WebSocket.OPEN) {
-         ws.send(JSON.stringify({ method: 'ping' }));
-      }
-    }, 30000);
-
     ws.onclose = () => {
       if (isMounted) setIsConnected(false);
     };
@@ -123,7 +117,6 @@ export function OrderBook({ symbol }: OrderBookProps) {
 
     return () => {
       isMounted = false;
-      clearInterval(pingInterval);
       if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
         ws.close();
       }

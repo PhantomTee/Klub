@@ -114,7 +114,7 @@ export default function TerminalPage() {
   const isFav = favorites.includes(symbol);
 
   return (
-    <div className="min-h-[calc(100vh-128px)] md:h-[calc(100vh-128px)] flex flex-col gap-6">
+    <div className="flex flex-col gap-4 pb-20 md:pb-0 h-[calc(100dvh-64px)] md:h-[calc(100vh-64px)]">
       {/* Quick Select Favorites Bar */}
       <div className="flex items-center space-x-2 shrink-0">
         <span className="text-[9px] font-mono text-[#544A4C] uppercase tracking-[0.2em] mr-4">Favorites:</span>
@@ -139,7 +139,7 @@ export default function TerminalPage() {
       </div>
 
       {/* Top Half: Chart & Tools */}
-      <div className={`flex-1 min-h-[300px] bg-bg-panel border border-border flex flex-col rounded-[2px] overflow-hidden ${activeMobileTab !== 'chart' ? 'hidden md:flex' : 'flex'}`}>
+      <div className={`flex-1 min-h-0 bg-bg-panel border border-border flex flex-col rounded-[2px] overflow-hidden ${activeMobileTab !== 'chart' ? 'hidden md:flex' : 'flex'}`}>
         <div className="h-[44px] flex items-center px-4 border-b border-border space-x-6 shrink-0 bg-bg-base">
           <div className="flex items-center space-x-3">
             <select 
@@ -205,7 +205,7 @@ export default function TerminalPage() {
       </div>
 
       {/* Bottom Half: Order Book, Recent Trades and Order Entry */}
-      <div className={`flex flex-col md:flex-row gap-6 shrink-0 h-auto md:h-[280px] ${activeMobileTab === 'chart' ? 'hidden md:flex' : 'flex'}`}>
+      <div className={`flex flex-col md:flex-row gap-4 shrink-0 md:h-[280px] overflow-y-auto md:overflow-hidden ${activeMobileTab === 'chart' ? 'hidden md:flex' : 'flex-1 md:flex-none flex'}`}>
         {/* Order Entry */}
         <div className={`w-full md:w-[320px] bg-bg-panel border border-border rounded-[2px] flex flex-col p-5 shadow-2xl order-1 md:order-3 relative z-30 shrink-0 ${activeMobileTab !== 'order' ? 'hidden md:flex' : 'flex'}`}>
           <div className="flex gap-1 mb-5">

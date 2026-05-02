@@ -9,63 +9,90 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Intent is required. Please type your trading goal.' }, { status: 400 });
     }
 
-    const apiKey = process.env.OPENROUTER_API_KEY;
+    const openRouterKey = process.env.OPENROUTER_API_KEY;
+    const heuristKey = process.env.HEURIST_API_KEY;
 
-    if (!apiKey) {
-      return NextResponse.json({ error: 'OPENROUTER_API_KEY is not configured' }, { status: 500 });
+    if (!openRouterKey && !heuristKey) {
+      return NextResponse.json({ error: 'OPENROUTER_API_KEY or HEURIST_API_KEY is not configured' }, { status: 500 });
     }
 
     const systemInstruction = `
       You are Klub, an AI trading agent for Bulk Trade, a Solana perpetuals exchange.
-      Parse the user's trading intent and return ONLY a valid JSON object.
+      Parse the user's trading intent and return ONLY a valid JSON object. No markdown formatting or code blocks.
       
       Available perpetual markets: BTC-USD, ETH-USD, SOL-USD, BNB-USD, AVAX-USD, ARB-USD,
       OP-USD, DOGE-USD, XRP-USD, ADA-USD, LINK-USD, MATIC-USD, DOT-USD, UNI-USD, PYTH-USD.
       
-      Order types: m=market, l=limit, st=stop-loss, tp=take-profit.
+      Order type tags: m=market, l=limit, st=stop-loss, tp=take-profit, rng=range/OCO, trig=trigger-basket, trl=trailing-stop, of=on-fill.
       
-      Output format:
+      Return ONLY this JSON schema (no prose, no markdown wrappers like \`\`\`json):
       {
         "confidence": "high|medium|low",
-        "summary": "Short description of the plan",
-        "totalNotionalUSD": 0,
-        "legs": [
-          {
-            "tag": "Order description",
-            "symbol": "BTC-USD",
-            "direction": "long|short",
-            "sizeUSD": 100,
-            "px": null,
-            "reduceOnly": false
-          }
-        ]
+        "summary": "one sentence",
+        "legs": [{
+          "id": "leg_1",
+          "tag": "m"|"l"|"st"|"tp"|"rng"|"trig"|"trl",
+          "symbol": "BTC-USD",
+          "direction": "buy"|"sell",
+          "sizeUSD": 10000,
+          "sizeContracts": null,
+          "px": null,
+          "tif": "GTC"|"IOC"|"ALO"|null,
+          "reduceOnly": false,
+          "isolated": false,
+          "triggerPrice": null,
+          "limitPrice": null,
+          "trailBps": null,
+          "stepBps": null,
+          "collarMin": null,
+          "collarMax": null,
+          "delaySeconds": 0,
+          "onFill": null,
+          "nestedActions": null,
+          "notes": ""
+        }],
+        "risks": ["string"],
+        "totalNotionalUSD": 10000
       }
     `;
 
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    const baseURL = openRouterKey 
+      ? 'https://openrouter.ai/api/v1/chat/completions'
+      : 'https://llm-gateway.heurist.xyz/v1/chat/completions'; // Assumed heurist endpoint
+      
+    const apiKey = openRouterKey || heuristKey;
+    const model = openRouterKey ? 'anthropic/claude-3.5-sonnet' : 'meta-llama/llama-3-70b-instruct'; // Default fallback
+
+    const response = await fetch(baseURL, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': process.env.APP_URL || 'http://localhost:3000',
-        'X-Title': '(Klub.) Alpha',
+        'HTTP-Referer': 'https://klub.trade',
+        'X-Title': 'Klub'
       },
       body: JSON.stringify({
-        model: 'anthropic/claude-3.5-sonnet',
+        model: model,
         messages: [
           { role: 'system', content: systemInstruction },
           { role: 'user', content: prompt }
         ],
-        response_format: { type: 'json_object' }
+        temperature: 0.05
       })
     });
 
+    if (!response.ok) {
+      const err = await response.text();
+      throw new Error(`API returned ${response.status}: ${err}`);
+    }
+
     const data = await response.json();
-    const content = data.choices[0].message.content;
+    const content = data.choices?.[0]?.message?.content || "{}";
+    const cleaned = content.replace(/^```json\n?|^```\n?/g, '').replace(/\n?```$/g, '').trim();
     
-    return NextResponse.json(JSON.parse(content));
+    return NextResponse.json(JSON.parse(cleaned));
   } catch (error: any) {
-    console.error('OpenRouter Error:', error);
+    console.error('Agent API Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
