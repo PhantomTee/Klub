@@ -6,9 +6,10 @@ export interface TickerData {
   lastPrice: string;
   markPrice: string;
   oraclePrice: string;
-  funding: string;
+  fundingRate: string;
   openInterest: string;
-  dayNtlVlm: string;
+  quoteVolume: string;
+  volume: string;
   priceChangePercent: string;
   regime: number;
 }
@@ -30,13 +31,33 @@ export function useTicker(symbol: string) {
     ws.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data);
-        if (msg.channel === 'ticker' && msg.data) {
-          setTicker(msg.data);
+        if (msg.type === 'ticker' && msg.data?.ticker) {
+          const t = msg.data.ticker;
+          setTicker({
+            lastPrice: t.lastPrice?.toString() || '0',
+            markPrice: t.markPrice?.toString() || '0',
+            oraclePrice: t.oraclePrice?.toString() || '0',
+            fundingRate: t.fundingRate?.toString() || '0',
+            openInterest: t.openInterest?.toString() || '0',
+            quoteVolume: t.quoteVolume?.toString() || '0',
+            volume: t.volume?.toString() || '0',
+            priceChangePercent: t.priceChangePercent?.toString() || '0',
+            regime: t.regime || 0
+          });
         }
       } catch (e) {}
     };
 
-    return () => ws.close();
+    const pingInterval = setInterval(() => {
+      if (ws.readyState === WebSocket.OPEN) {
+         ws.send(JSON.stringify({ method: 'ping' }));
+      }
+    }, 30000);
+
+    return () => {
+      clearInterval(pingInterval);
+      ws.close();
+    };
   }, [symbol]);
 
   return ticker;

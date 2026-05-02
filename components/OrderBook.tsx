@@ -61,7 +61,7 @@ export function OrderBook({ symbol }: OrderBookProps) {
       if (isMounted) setIsConnected(true);
       ws.send(JSON.stringify({
         method: "subscribe",
-        subscription: [{ type: "l2Book", symbol }]
+        subscription: [{ type: "l2Snapshot", symbol, nlevels: 20 }]
       }));
     };
 
@@ -69,13 +69,13 @@ export function OrderBook({ symbol }: OrderBookProps) {
       if (!isMounted) return;
       try {
         const msg = JSON.parse(event.data);
-        if (msg.channel === 'l2Book' && msg.data) {
-          const l2Data = msg.data;
-          if (l2Data.coin !== coin) return;
+        if (msg.type === 'l2Snapshot' && msg.data?.book) {
+          const l2Data = msg.data.book;
+          if (l2Data.symbol !== symbol) return;
 
           const processLevels = (levels: any[]) => {
             let totalDepth = 0;
-            return levels.map((l: any) => {
+            return (levels || []).map((l: any) => {
               const px = parseFloat(l.px);
               const sz = parseFloat(l.sz);
               totalDepth += sz;
@@ -83,11 +83,11 @@ export function OrderBook({ symbol }: OrderBookProps) {
             });
           };
 
-          const rawBids = l2Data.levels[0];
-          const rawAsks = l2Data.levels[1];
+          const rawBids = l2Data.levels[0] || [];
+          const rawAsks = l2Data.levels[1] || [];
 
           setBids(processLevels(rawBids));
-          setAsks(processLevels(rawAsks).sort((a, b) => b.price - a.price));
+          setAsks(processLevels(rawAsks).sort((a: any, b: any) => b.price - a.price));
 
           if (rawBids.length > 0 && rawAsks.length > 0) {
             const mid = (parseFloat(rawBids[0].px) + parseFloat(rawAsks[0].px)) / 2;
@@ -106,6 +106,12 @@ export function OrderBook({ symbol }: OrderBookProps) {
       }
     };
 
+    const pingInterval = setInterval(() => {
+      if (ws.readyState === WebSocket.OPEN) {
+         ws.send(JSON.stringify({ method: 'ping' }));
+      }
+    }, 30000);
+
     ws.onclose = () => {
       if (isMounted) setIsConnected(false);
     };
@@ -117,6 +123,7 @@ export function OrderBook({ symbol }: OrderBookProps) {
 
     return () => {
       isMounted = false;
+      clearInterval(pingInterval);
       if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
         ws.close();
       }

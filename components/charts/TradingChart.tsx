@@ -2,13 +2,11 @@
 
 import React, { useEffect, useRef } from 'react';
 import { createChart, ColorType, IChartApi, ISeriesApi, UTCTimestamp, CandlestickSeries } from 'lightweight-charts';
-import { useBulkMarkets } from '../../hooks/useBulkMarkets';
 
 export function TradingChart({ symbol = 'BTC-USD', interval = '1m' }: { symbol?: string, interval?: string }) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
-  const { candles } = useBulkMarkets(symbol, interval);
   const dataSetRef = useRef(false);
 
   useEffect(() => {
@@ -58,6 +56,52 @@ export function TradingChart({ symbol = 'BTC-USD', interval = '1m' }: { symbol?:
       })
       .catch(console.error);
 
+    const wsUrl = process.env.NEXT_PUBLIC_BULK_WS || 'wss://exchange-ws1.bulk.trade';
+    const ws = new WebSocket(wsUrl);
+
+    ws.onopen = () => {
+      ws.send(JSON.stringify({
+        method: 'subscribe',
+        subscription: [{ type: 'candle', symbol, interval }]
+      }));
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        if (msg.type === 'candle' && msg.data && msg.data.candles) {
+           const batch = msg.data.candles;
+           const lwcData = batch.map((c: any) => ({
+             time: Math.floor(Number(c.t) / 1000) as UTCTimestamp,
+             open: parseFloat(c.o),
+             high: parseFloat(c.h),
+             low: parseFloat(c.l),
+             close: parseFloat(c.c)
+           })).sort((a: any, b: any) => a.time - b.time);
+
+           if (lwcData.length > 10) {
+             const uniqueData = Array.from(new Map(lwcData.map((item: any) => [item.time, item])).values()) as any[];
+             series.setData(uniqueData);
+             dataSetRef.current = true;
+           } else if (dataSetRef.current) {
+             for (const c of lwcData) {
+               try {
+                 series.update(c);
+               } catch (e) {
+                 // ignore outdated ticks
+               }
+             }
+           }
+        }
+      } catch (e) {}
+    };
+
+    const pingInterval = setInterval(() => {
+      if (ws.readyState === WebSocket.OPEN) {
+         ws.send(JSON.stringify({ method: 'ping' }));
+      }
+    }, 30000);
+
     const handleResize = () => {
       if (chartContainerRef.current && chartRef.current) {
         chartRef.current.applyOptions({
@@ -71,45 +115,13 @@ export function TradingChart({ symbol = 'BTC-USD', interval = '1m' }: { symbol?:
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      clearInterval(pingInterval);
+      ws.close();
       chart.remove();
       chartRef.current = null;
       seriesRef.current = null;
     };
   }, [symbol, interval]);
-
-  useEffect(() => {
-    if (seriesRef.current && candles.length > 0) {
-      if (!dataSetRef.current || candles.length > 1) {
-        // Full update
-        const lwcData = candles.map((c) => ({
-          time: Math.floor(c.t / 1000) as UTCTimestamp,
-          open: c.o,
-          high: c.h,
-          low: c.l,
-          close: c.c
-        })).sort((a,b) => (a.time as number) - (b.time as number));
-        // Ensure no duplicates
-        const uniqueData = Array.from(new Map(lwcData.map(item => [item.time, item])).values());
-        
-        seriesRef.current.setData(uniqueData);
-        dataSetRef.current = true;
-      } else if (candles.length === 1) {
-        // Single update
-        const c = candles[0];
-        try {
-          seriesRef.current.update({
-            time: Math.floor(c.t / 1000) as UTCTimestamp,
-            open: c.o,
-            high: c.h,
-            low: c.l,
-            close: c.c
-          });
-        } catch (e) {
-          // ignore time order assertions if ws sends outdated ticks
-        }
-      }
-    }
-  }, [candles]);
 
   return (
     <div ref={chartContainerRef} className="w-full h-full min-h-[300px]" />

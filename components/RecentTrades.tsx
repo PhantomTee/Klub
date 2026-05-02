@@ -27,11 +27,11 @@ export function RecentTrades({ symbol }: { symbol: string }) {
     ws.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data);
-        if (msg.channel === 'trades' && msg.data) {
-          const freshTrades = msg.data.map((t: any) => ({
+        if (msg.type === 'trades' && msg.data?.trades) {
+          const freshTrades = msg.data.trades.map((t: any) => ({
             price: parseFloat(t.px),
             size: parseFloat(t.sz),
-            side: t.side === 'B' ? 'buy' : 'sell',
+            side: t.side ? 'buy' : 'sell',
             time: t.time
           }));
           setTrades(prev => [...freshTrades, ...prev].slice(0, 50));
@@ -39,8 +39,17 @@ export function RecentTrades({ symbol }: { symbol: string }) {
       } catch (e) {}
     };
 
-    return () => ws.close();
-  }, [coin]);
+    const pingInterval = setInterval(() => {
+      if (ws.readyState === WebSocket.OPEN) {
+         ws.send(JSON.stringify({ method: 'ping' }));
+      }
+    }, 30000);
+
+    return () => {
+      clearInterval(pingInterval);
+      ws.close();
+    };
+  }, [symbol]);
 
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-bg-panel">

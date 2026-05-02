@@ -22,13 +22,14 @@ export default function MarketsPage() {
   useEffect(() => {
     async function loadMarkets() {
       try {
-        const stats = await fetchMarketStats();
-        // stats is an array of TickerData objects with 'symbol' or 'coin'
+        const res = await fetchMarketStats();
+        // Adjust for potential wrapping object
+        const stats = Array.isArray(res) ? res : res.markets || res.stats || [];
         const mappedMarkets = stats.map((s: any) => ({
-          symbol: s.coin || s.symbol,
+          symbol: s.symbol || s.coin,
           price: parseFloat(s.lastPrice || s.markPrice || '0'),
           change24h: parseFloat(s.priceChangePercent || '0') * 100, // assuming decimal, convert to %
-          volume24h: parseFloat(s.dayNtlVlm || '0'),
+          volume24h: parseFloat(s.dayNtlVlm || s.quoteVolume || s.volume || '0'),
         }));
         
         setMarkets(mappedMarkets);

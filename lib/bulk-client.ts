@@ -45,7 +45,7 @@ export async function fetchUserFills(userPubkey: string) {
 }
 
 export async function fetchMarketStats() {
-  const res = await fetch(`${HTTP_BASE}/info`);
+  const res = await fetch(`${HTTP_BASE}/stats`);
   if (!res.ok) throw new Error('Failed to fetch market stats');
   return res.json();
 }

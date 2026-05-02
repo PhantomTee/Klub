@@ -20,10 +20,28 @@ export default function TerminalPage() {
   const [leverage, setLeverage] = useState(10);
   const [executing, setExecuting] = useState(false);
   const [activeMobileTab, setActiveMobileTab] = useState<'chart' | 'order' | 'trade'>('chart');
+  const [availableMarkets, setAvailableMarkets] = useState<string[]>(['BTC-USD', 'ETH-USD', 'SOL-USD']);
 
   const { favorites, toggleFavorite } = useUIStore();
   const wallet = useWallet();
   const ticker = useTicker(symbol);
+
+  useEffect(() => {
+    async function loadSymbols() {
+      try {
+        const { fetchMarketStats } = await import('../../lib/bulk-client');
+        const res = await fetchMarketStats();
+        const stats = Array.isArray(res) ? res : res.markets || res.stats || [];
+        const symbols = stats.map((s: any) => s.symbol || s.coin).filter(Boolean);
+        if (symbols.length > 0) {
+          setAvailableMarkets(symbols);
+        }
+      } catch (e) {
+        console.error('Failed to load market symbols', e);
+      }
+    }
+    loadSymbols();
+  }, []);
 
   const handleExecute = async () => {
     if (!wallet.connected || !wallet.publicKey) {
@@ -111,9 +129,9 @@ export default function TerminalPage() {
               onChange={e => setSymbol(e.target.value)}
               className="bg-transparent text-[11px] font-bold font-mono tracking-[0.2em] outline-none text-text-primary uppercase cursor-pointer"
             >
-              <option value="BTC-USD">BTC-USD</option>
-              <option value="ETH-USD">ETH-USD</option>
-              <option value="SOL-USD">SOL-USD</option>
+              {availableMarkets.map(m => (
+                <option key={m} value={m}>{m}</option>
+              ))}
             </select>
             <button 
               onClick={handleToggleFav}
@@ -144,7 +162,7 @@ export default function TerminalPage() {
           <div className="flex flex-col">
             <span className="text-[9px] text-text-tertiary uppercase tracking-tighter">24h Vol</span>
             <span className="text-[11px] font-mono font-bold text-text-primary">
-              ${ticker ? (parseFloat(ticker.dayNtlVlm) / 1e6).toFixed(1) + 'M' : '---'}
+              ${ticker ? (parseFloat(ticker.quoteVolume) / 1e6).toFixed(1) + 'M' : '---'}
             </span>
           </div>
           <div className="flex flex-col">
@@ -156,7 +174,7 @@ export default function TerminalPage() {
           <div className="flex flex-col">
             <span className="text-[9px] text-text-tertiary uppercase tracking-tighter">Funding Rate</span>
             <span className="text-[11px] font-mono font-bold text-accent">
-              {ticker ? (parseFloat(ticker.funding) * 100).toFixed(4) + '%' : '---'}
+              {ticker ? (parseFloat(ticker.fundingRate) * 100).toFixed(4) + '%' : '---'}
             </span>
           </div>
           <div className="flex flex-col">
