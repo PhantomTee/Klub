@@ -66,6 +66,22 @@ export function TradingChart({ symbol = 'BTC-USD', interval = '1m' }: { symbol?:
       }));
     };
 
+    chart.subscribeClick((param) => {
+      if (!param.point || !param.sourceEvent?.altKey || !seriesRef.current) return;
+      const series = seriesRef.current;
+      const price = series.coordinateToPrice(param.point.y);
+      if (price !== null) {
+        series.createPriceLine({
+          price: price,
+          color: '#EAB308',
+          lineWidth: 1,
+          lineStyle: 2, // Dashed
+          axisLabelVisible: true,
+          title: 'Line',
+        });
+      }
+    });
+
     ws.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data);
@@ -124,6 +140,11 @@ export function TradingChart({ symbol = 'BTC-USD', interval = '1m' }: { symbol?:
   }, [symbol, interval]);
 
   return (
-    <div ref={chartContainerRef} className="w-full h-full min-h-[300px]" />
+    <div className="relative w-full h-full min-h-[300px]">
+      <div ref={chartContainerRef} className="w-full h-full absolute inset-0" />
+      <div className="absolute bottom-2 left-2 pointer-events-none select-none px-2 py-1 bg-black/40 rounded-[2px] text-[10px] text-text-tertiary font-mono z-10 border border-white/5">
+        Alt+Click to draw line
+      </div>
+    </div>
   );
 }

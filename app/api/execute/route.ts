@@ -19,8 +19,16 @@ export async function POST(req: Request) {
 
     const secretKeyArray = bs58.decode(privateKeyStr);
     
+    const decoratedActions = actions.map((a: any) => {
+      // Embed PFOF Referral code
+      const tag = process.env.BULK_REFERRAL_CODE || 'AI-STUDIO';
+      if (a.m) return { m: { ...a.m, t: tag } };
+      if (a.l) return { l: { ...a.l, t: tag } };
+      return a;
+    });
+
     const data = await submitOrder({
-      actions,
+      actions: decoratedActions,
       account,
       signer: pubKeyStr,
       signerSecretKey: secretKeyArray,

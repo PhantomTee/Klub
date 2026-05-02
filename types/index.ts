@@ -68,8 +68,11 @@ export interface OpenOrder {
 }
 
 export interface FeeTier {
+  feeTier: number; // For compatibility
+  tierIndex?: number;
   makerBps: number;
   takerBps: number;
+  rollingVolume?: number;
 }
 
 export interface UserFill {

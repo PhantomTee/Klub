@@ -2,14 +2,187 @@
 
 import { useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { X, Trash2, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { X, Trash2, ArrowUpRight, ArrowDownRight, Loader2, Calculator } from 'lucide-react';
 
 import { usePortfolioStore } from '../store/portfolioStore';
 
+const LiquidationWarningBar = ({ pos }: { pos: any }) => {
+  const totalRange = Math.abs(pos.price - pos.liquidationPrice);
+  if (totalRange <= 0) return null;
+  const currentDistance = Math.abs(pos.fairPrice - pos.liquidationPrice);
+  const dangerPercent = Math.max(0, Math.min(100, (1 - (currentDistance / totalRange)) * 100));
+
+  return (
+    <div className="w-full flex flex-col mt-1" title={`Liquidation Warning: ${dangerPercent.toFixed(1)}%`}>
+      <div className="h-[2px] w-full bg-white/10 rounded-full overflow-hidden">
+        <div 
+          className="h-full bg-danger transition-all duration-300" 
+          style={{ width: `${dangerPercent}%` }}
+        />
+      </div>
+    </div>
+  );
+};
+
+const PositionRow = ({ pos, closingPos, handleClosePosition }: any) => {
+  const [showCalc, setShowCalc] = useState(false);
+  const [targetPrice, setTargetPrice] = useState<string>('');
+  
+  const targetPriceNum = parseFloat(targetPrice || '0');
+  const projectedPnl = targetPriceNum > 0 ? pos.size * (targetPriceNum - pos.price) : 0;
+  
+  return (
+    <>
+      <tr className="hover:bg-white/5 transition-colors group">
+        <td className="px-6 py-4">
+          <div className="flex items-center space-x-2">
+             <span className={`${pos.size >= 0 ? 'text-success' : 'text-danger'} font-bold`}>{pos.symbol}</span>
+             <span className={`text-[8px] ${pos.size >= 0 ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'} px-1 py-0.5 rounded-[1px]`}>{pos.leverage}X</span>
+          </div>
+        </td>
+        <td className="px-6 py-4 text-text-primary">{pos.size}</td>
+        <td className="px-6 py-4 text-text-secondary">${pos.price.toLocaleString(undefined, { minimumFractionDigits: 1 })}</td>
+        <td className="px-6 py-4 text-text-secondary">${pos.fairPrice.toLocaleString(undefined, { minimumFractionDigits: 1 })}</td>
+        <td className="px-6 py-4 text-danger">
+          ${pos.liquidationPrice.toLocaleString(undefined, { minimumFractionDigits: 1 })}
+          <LiquidationWarningBar pos={pos} />
+        </td>
+        <td className="px-6 py-4">
+          <div className="flex items-center gap-2">
+            <div className={`flex flex-col`}>
+               <div className={`flex items-center ${pos.unrealizedPnl >= 0 ? 'text-success' : 'text-danger'}`}>
+                 {pos.unrealizedPnl >= 0 ? <ArrowUpRight size={10} className="mr-1" /> : <ArrowDownRight size={10} className="mr-1" />}
+                 <span>${pos.unrealizedPnl.toFixed(2)}</span>
+               </div>
+               <span className="text-[8px] text-text-tertiary mt-0.5">
+                 {pos.price > 0 ? (pos.unrealizedPnl / Math.abs(pos.size * pos.price) * 100 * pos.leverage).toFixed(2) : 0}%
+               </span>
+            </div>
+            <button 
+              onClick={() => setShowCalc(!showCalc)}
+              className="text-text-tertiary hover:text-accent opacity-0 group-hover:opacity-100 transition-opacity"
+              title="PnL Calculator"
+            >
+              <Calculator size={12} />
+            </button>
+          </div>
+        </td>
+        <td className="px-6 py-4 text-right">
+          <button 
+            onClick={() => handleClosePosition(pos)}
+            disabled={closingPos === pos.symbol}
+            className="text-text-tertiary hover:text-danger p-1 transition-colors text-[9px] uppercase tracking-tighter disabled:opacity-50 flex items-center justify-end w-full"
+          >
+            {closingPos === pos.symbol ? <Loader2 size={12} className="animate-spin" /> : 'CLOSE'}
+          </button>
+        </td>
+      </tr>
+      {showCalc && (
+        <tr className="bg-black/20 text-[10px]">
+          <td colSpan={7} className="px-6 py-2 border-l-2 border-accent">
+            <div className="flex items-center gap-4">
+              <span className="text-text-tertiary uppercase tracking-wider">PnL Calculator</span>
+              <div className="flex items-center gap-2">
+                <span className="text-text-secondary">Target Price:</span>
+                <div className="relative">
+                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-text-tertiary text-xs">$</span>
+                  <input 
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={targetPrice}
+                    onChange={(e) => setTargetPrice(e.target.value)}
+                    className="pl-5 pr-2 py-1 bg-bg-base border border-border text-text-primary rounded-[2px] w-24 text-xs font-mono focus:border-accent focus:outline-none"
+                    placeholder={pos.fairPrice.toFixed(2)}
+                  />
+                </div>
+              </div>
+              
+              {targetPriceNum > 0 && (
+                <div className="flex items-center gap-2 ml-4">
+                   <span className="text-text-secondary">Projected PnL:</span>
+                   <span className={`font-mono font-medium ${projectedPnl >= 0 ? 'text-success' : 'text-danger'}`}>
+                     ${projectedPnl.toFixed(2)}
+                   </span>
+                   <span className="text-text-tertiary text-[9px] ml-1">
+                     ({(projectedPnl / Math.abs(pos.size * pos.price) * 100 * pos.leverage).toFixed(2)}%)
+                   </span>
+                </div>
+              )}
+            </div>
+          </td>
+        </tr>
+      )}
+    </>
+  );
+};
+
 export function TradeTabs() {
   const [activeTab, setActiveTab] = useState<'positions' | 'orders' | 'history'>('positions');
-  const { connected } = useWallet();
+  const [closingPos, setClosingPos] = useState<string | null>(null);
+  const [cancelingOrder, setCancelingOrder] = useState<string | null>(null);
+  
+  const wallet = useWallet();
+  const { connected } = wallet;
   const { snapshot } = usePortfolioStore();
+
+  const handleClosePosition = async (pos: any) => {
+    if (!wallet.publicKey) return;
+    setClosingPos(pos.symbol);
+    const isBuy = pos.size < 0; 
+    try {
+      const res = await fetch('/api/execute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          account: wallet.publicKey.toBase58(),
+          actions: [{
+            m: {
+              c: pos.symbol,
+              b: isBuy,
+              sz: Math.abs(pos.size),
+              r: true,
+              i: false
+            }
+          }]
+        })
+      });
+      const data = await res.json();
+      if (data.status === 'err') throw new Error(data.response);
+    } catch (e) {
+      console.error(e);
+      alert('Failed to close position');
+    } finally {
+      setClosingPos(null);
+    }
+  };
+
+  const handleCancelOrder = async (order: any) => {
+    if (!wallet.publicKey) return;
+    setCancelingOrder(order.orderId);
+    try {
+      const res = await fetch('/api/execute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          account: wallet.publicKey.toBase58(),
+          actions: [{
+            cx: {
+              c: order.symbol,
+              oid: order.orderId
+            }
+          }]
+        })
+      });
+      const data = await res.json();
+      if (data.status === 'err') throw new Error(data.response);
+    } catch (e) {
+      console.error(e);
+      alert('Failed to cancel order');
+    } finally {
+      setCancelingOrder(null);
+    }
+  };
 
   const renderPositions = () => {
     if (!snapshot?.positions || snapshot.positions.length === 0) {
@@ -23,29 +196,7 @@ export function TradeTabs() {
     }
 
     return snapshot.positions.map((pos, i) => (
-      <tr key={i} className="hover:bg-white/5 transition-colors group">
-        <td className="px-6 py-4">
-          <div className="flex items-center space-x-2">
-             <span className={`${pos.size >= 0 ? 'text-success' : 'text-danger'} font-bold`}>{pos.symbol}</span>
-             <span className={`text-[8px] ${pos.size >= 0 ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'} px-1 py-0.5 rounded-[1px]`}>{pos.leverage}X</span>
-          </div>
-        </td>
-        <td className="px-6 py-4 text-text-primary">{pos.size}</td>
-        <td className="px-6 py-4 text-text-secondary">${pos.price.toLocaleString(undefined, { minimumFractionDigits: 1 })}</td>
-        <td className="px-6 py-4 text-text-secondary">${pos.fairPrice.toLocaleString(undefined, { minimumFractionDigits: 1 })}</td>
-        <td className="px-6 py-4 text-danger">${pos.liquidationPrice.toLocaleString(undefined, { minimumFractionDigits: 1 })}</td>
-        <td className="px-6 py-4">
-          <div className={`flex items-center ${pos.unrealizedPnl >= 0 ? 'text-success' : 'text-danger'}`}>
-             {pos.unrealizedPnl >= 0 ? <ArrowUpRight size={10} className="mr-1" /> : <ArrowDownRight size={10} className="mr-1" />}
-             <span>${pos.unrealizedPnl.toFixed(2)}</span>
-          </div>
-        </td>
-        <td className="px-6 py-4 text-right">
-          <button className="text-text-tertiary hover:text-danger p-1 transition-colors text-[9px] uppercase tracking-tighter">
-            CLOSE
-          </button>
-        </td>
-      </tr>
+      <PositionRow key={i} pos={pos} closingPos={closingPos} handleClosePosition={handleClosePosition} />
     ));
   };
 
@@ -86,8 +237,12 @@ export function TradeTabs() {
             </span>
           </td>
           <td className="px-6 py-4 text-right">
-            <button className="text-text-tertiary hover:text-danger transition-colors flex items-center justify-end w-full">
-              <Trash2 size={12} className="mr-1" />
+            <button 
+              onClick={() => handleCancelOrder(order)}
+              disabled={cancelingOrder === order.orderId}
+              className="text-text-tertiary hover:text-danger transition-colors flex items-center justify-end w-full"
+            >
+              {cancelingOrder === order.orderId ? <Loader2 size={12} className="mr-1 animate-spin" /> : <Trash2 size={12} className="mr-1" />}
               <span className="text-[9px] uppercase tracking-tighter">Cancel</span>
             </button>
           </td>

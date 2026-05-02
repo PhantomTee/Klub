@@ -7,6 +7,7 @@ import { RecentTrades } from '../../components/RecentTrades';
 import { TradeTabs } from '../../components/TradeTabs';
 import { fetchMarketStats } from '../../lib/bulk-client';
 import { useUIStore } from '../../store/uiStore';
+import { usePortfolioStore } from '../../store/portfolioStore';
 import { Star, Loader2 } from 'lucide-react';
 
 import { useTicker } from '../../hooks/useTicker';
@@ -23,6 +24,7 @@ export default function TerminalPage() {
   const [availableMarkets, setAvailableMarkets] = useState<string[]>(['BTC-USD', 'ETH-USD', 'SOL-USD']);
 
   const { favorites, toggleFavorite } = useUIStore();
+  const { snapshot } = usePortfolioStore();
   const wallet = useWallet();
   const ticker = useTicker(symbol);
 
@@ -42,6 +44,21 @@ export default function TerminalPage() {
       }
     }
     loadSymbols();
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') return;
+      if (e.key.toLowerCase() === 'b') {
+        setIsBuy(true);
+      } else if (e.key.toLowerCase() === 's') {
+        setIsBuy(false);
+      } else if (e.key === 'Escape') {
+        setSize('');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   const handleExecute = async () => {
@@ -246,11 +263,24 @@ export default function TerminalPage() {
                  max="50" 
                  step="1"
                  value={leverage}
-                 onChange={e => setLeverage(parseInt(e.target.value))}
+                  onChange={e => setLeverage(parseInt(e.target.value))}
                  className="w-full h-2 bg-border rounded-full appearance-none accent-accent cursor-pointer" 
                />
             </div>
             
+            {snapshot?.feeTiers?.[0] && (
+               <div className="flex justify-between items-center text-[9px] text-text-tertiary mb-2 border border-border p-2 bg-black/10">
+                 <div className="flex flex-col">
+                   <span className="uppercase tracking-widest text-[#544A4C]">Tier {(snapshot.feeTiers[0].tierIndex || 0) + 1} Fees</span>
+                   <span>M: {snapshot.feeTiers[0].makerBps}bps / T: {snapshot.feeTiers[0].takerBps}bps</span>
+                 </div>
+                 <div className="flex flex-col text-right">
+                   <span className="uppercase tracking-widest text-[#544A4C]">14d Vol</span>
+                   <span className="text-accent">${((snapshot.feeTiers[0].rollingVolume || 0) / 1e6).toFixed(1)}M</span>
+                 </div>
+               </div>
+            )}
+
             <div className="pt-4 border-t border-border">
               <button 
                 type="button"
