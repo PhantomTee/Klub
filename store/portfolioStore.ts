@@ -7,6 +7,8 @@ interface PortfolioStore {
   prices: Record<string, number>;
   setSnapshot: (s: AccountSnapshot) => void;
   updatePosition: (symbol: string, patch: Partial<BulkPosition>) => void;
+  updateOrder: (order: any) => void;
+  removeOrder: (orderId: string) => void;
   setConnected: (v: boolean) => void;
   setPrice: (symbol: string, price: number) => void;
 }
@@ -22,6 +24,49 @@ export const usePortfolioStore = create<PortfolioStore>((set) => ({
       p.symbol === symbol ? { ...p, ...patch } : p
     );
     return { snapshot: { ...state.snapshot, positions } };
+  }),
+  updateOrder: (update) => set((state) => {
+    if (!state.snapshot) return state;
+    const openOrders = [...state.snapshot.openOrders];
+    const idx = openOrders.findIndex(o => o.orderId === update.oid);
+    
+    const updatedOrder = {
+      orderId: update.oid,
+      symbol: update.sym,
+      price: update.px,
+      size: update.sz,
+      originalSize: update.origSz,
+      filledSize: update.fillSz,
+      status: update.status,
+      orderType: update.ot
+    };
+
+    if (idx !== -1) {
+      openOrders[idx] = updatedOrder;
+    } else {
+      openOrders.unshift(updatedOrder);
+    }
+    
+    // terminal states
+    const isTerminal = [
+      'filled', 'partiallyFilled', 'cancelled', 'cancelledRiskLimit', 
+      'cancelledSelfCrossing', 'cancelledReduceOnly', 'cancelledIoc', 
+      'rejectedCrossing', 'rejectedDuplicate', 'rejectedRiskLimit', 
+      'rejectedInvalid', 'siblingCancelled', 'triggerFailed'
+    ].includes(update.status);
+
+    if (isTerminal) {
+      setTimeout(() => {
+        usePortfolioStore.getState().removeOrder(update.oid);
+      }, 5000);
+    }
+    
+    return { snapshot: { ...state.snapshot, openOrders } };
+  }),
+  removeOrder: (orderId) => set((state) => {
+    if (!state.snapshot) return state;
+    const openOrders = state.snapshot.openOrders.filter(o => o.orderId !== orderId);
+    return { snapshot: { ...state.snapshot, openOrders } };
   }),
   setConnected: (v) => set({ isConnected: v }),
   setPrice: (symbol, price) => set((state) => ({

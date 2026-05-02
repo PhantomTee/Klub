@@ -53,28 +53,47 @@ export function TradeTabs() {
     if (!snapshot?.openOrders || snapshot.openOrders.length === 0) {
       return (
         <tr className="border-none">
-          <td colSpan={7} className="px-6 py-10 text-center text-text-tertiary italic opacity-30 select-none">
+          <td colSpan={8} className="px-6 py-10 text-center text-text-tertiary italic opacity-30 select-none">
             No open orders found
           </td>
         </tr>
       );
     }
 
-    return snapshot.openOrders.map((order, i) => (
-      <tr key={i} className="hover:bg-white/5 transition-colors group">
-        <td className="px-6 py-4 font-bold">{order.symbol}</td>
-        <td className="px-6 py-4 text-text-secondary">{order.type}</td>
-        <td className={`px-6 py-4 ${order.isBuy ? 'text-success' : 'text-danger'}`}>{order.isBuy ? 'BUY' : 'SELL'}</td>
-        <td className="px-6 py-4">{order.size}</td>
-        <td className="px-6 py-4">${order.price.toLocaleString()}</td>
-        <td className="px-6 py-4">0.00%</td>
-        <td className="px-6 py-4 text-right">
-          <button className="text-text-tertiary hover:text-danger transition-colors">
-            <X size={14} />
-          </button>
-        </td>
-      </tr>
-    ));
+    return snapshot.openOrders.map((order, i) => {
+      const isBuy = order.originalSize >= 0;
+      const sizeAbs = Math.abs(order.originalSize);
+      const filledAbs = Math.abs(order.filledSize);
+
+      return (
+        <tr key={i} className="hover:bg-white/5 transition-colors group">
+          <td className="px-6 py-4 font-bold">{order.symbol}</td>
+          <td className="px-6 py-4 text-text-secondary">{order.orderType}</td>
+          <td className={`px-6 py-4 ${isBuy ? 'text-success' : 'text-danger'}`}>{isBuy ? 'BUY' : 'SELL'}</td>
+          <td className="px-6 py-4">{sizeAbs}</td>
+          <td className="px-6 py-4">${order.price.toLocaleString(undefined, { minimumFractionDigits: 1 })}</td>
+          <td className="px-6 py-4">
+             <div className="flex flex-col">
+                <span>{filledAbs}</span>
+                <span className="text-[8px] text-text-tertiary">
+                  ({sizeAbs > 0 ? ((filledAbs / sizeAbs) * 100).toFixed(1) : 0}%)
+                </span>
+             </div>
+          </td>
+          <td className="px-6 py-4">
+            <span className="text-[8px] uppercase px-1.5 py-0.5 rounded-[2px] bg-bg-base border border-border text-text-secondary">
+              {order.status || 'unknown'}
+            </span>
+          </td>
+          <td className="px-6 py-4 text-right">
+            <button className="text-text-tertiary hover:text-danger transition-colors flex items-center justify-end w-full">
+              <Trash2 size={12} className="mr-1" />
+              <span className="text-[9px] uppercase tracking-tighter">Cancel</span>
+            </button>
+          </td>
+        </tr>
+      );
+    });
   };
 
   return (
@@ -123,6 +142,7 @@ export function TradeTabs() {
                   <th className="px-6 py-3 font-medium">Size</th>
                   <th className="px-6 py-3 font-medium">Price</th>
                   <th className="px-6 py-3 font-medium">Filled</th>
+                  <th className="px-6 py-3 font-medium">Status</th>
                   <th className="px-6 py-3 font-medium text-right">Action</th>
                 </tr>
               ) : (

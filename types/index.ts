@@ -57,13 +57,14 @@ export interface BulkPosition {
 }
 
 export interface OpenOrder {
-  id: string;
+  orderId: string;
   symbol: string;
-  isBuy: boolean;
   price: number;
   size: number;
-  type: string;
   originalSize: number;
+  filledSize: number;
+  status: string;
+  orderType: string;
 }
 
 export interface FeeTier {

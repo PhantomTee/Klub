@@ -5,7 +5,7 @@ import { usePortfolioStore } from '../store/portfolioStore';
 import { AccountSnapshot } from '../types';
 
 export function useBulkAccount(userPubkey: string | undefined) {
-  const { setSnapshot, setConnected } = usePortfolioStore();
+  const { setSnapshot, setConnected, updateOrder } = usePortfolioStore();
   const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
@@ -30,19 +30,30 @@ export function useBulkAccount(userPubkey: string | undefined) {
     ws.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data);
-        if (msg.channel === 'account' && msg.data) {
-          setSnapshot(msg.data as AccountSnapshot);
+        if (msg.type === 'account' && msg.data) {
+          if (msg.data.type === 'accountSnapshot') {
+            setSnapshot(msg.data as AccountSnapshot);
+          } else if (msg.data.type === 'orderUpdate') {
+            updateOrder(msg.data);
+          }
         }
       } catch (e) {
         console.error('Account WS Error:', e);
       }
     };
 
+    const pingInterval = setInterval(() => {
+      if (ws.readyState === WebSocket.OPEN) {
+         ws.send(JSON.stringify({ method: 'ping' }));
+      }
+    }, 30000);
+
     ws.onclose = () => {
       setConnected(false);
     };
 
     return () => {
+      clearInterval(pingInterval);
       ws.close();
     };
   }, [userPubkey, setSnapshot, setConnected]);
