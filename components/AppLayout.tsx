@@ -12,14 +12,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const isLanding = pathname === '/';
 
   return (
-    <div className="min-h-screen bg-[#141310] text-[#FFFEEF] font-sans overflow-x-hidden">
+    <div className="min-h-screen bg-bg-base text-text-primary font-sans overflow-x-hidden">
       {!isLanding && <Sidebar />}
       {!isLanding && <TopBar />}
 
       {/* Backdrop for blur and closing */}
       {isSidebarOpen && !isLanding && (
         <div 
-          className="fixed inset-0 bg-[#000000]/40 backdrop-blur-sm z-40"
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
           onClick={() => setSidebarOpen(false)}
         />
       )}

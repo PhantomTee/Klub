@@ -1,22 +1,42 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { TradingChart } from '../../components/charts/TradingChart';
 import { OrderBook } from '../../components/OrderBook';
+import { fetchMarketStats } from '../../lib/bulk-client';
 import { useUIStore } from '../../store/uiStore';
 import { Star, Loader2 } from 'lucide-react';
 
 export default function TerminalPage() {
   const [symbol, setSymbol] = useState('BTC-USD');
-  const [interval, setInterval] = useState('1m');
+  const [interval, setChartInterval] = useState('1m');
   const [isBuy, setIsBuy] = useState(true);
   const [orderType, setOrderType] = useState('Market');
   const [size, setSize] = useState('');
   const [leverage, setLeverage] = useState(10);
   const [executing, setExecuting] = useState(false);
-  
+  const [marketStats, setMarketStats] = useState<any>(null);
+  const [activeMobileTab, setActiveMobileTab] = useState<'chart' | 'order' | 'trade'>('chart');
+
   const { favorites, toggleFavorite } = useUIStore();
   const wallet = useWallet();
+
+  useEffect(() => {
+    async function loadStats() {
+      try {
+        const stats = await fetchMarketStats();
+        // Hyperliquid format: list of stats
+        const coin = symbol.split('-')[0];
+        const coinStats = stats.find((s: any) => s.coin === coin) || stats[0];
+        setMarketStats(coinStats);
+      } catch (e) {
+        // console.error('Failed to load stats', e);
+      }
+    }
+    loadStats();
+    const statsInterval = window.setInterval(loadStats, 10000);
+    return () => window.clearInterval(statsInterval);
+  }, [symbol]);
 
   const handleExecute = async () => {
     console.log('Executing order:', { symbol, isBuy, size, leverage, orderType });
@@ -78,8 +98,8 @@ export default function TerminalPage() {
               onClick={() => setSymbol(fav)}
               className={`px-4 py-1.5 text-[10px] font-mono uppercase tracking-widest border transition-all ${
                 symbol === fav 
-                  ? 'bg-[#FFB547] border-[#FFB547] text-[#141310] font-bold' 
-                  : 'bg-[#1B1A14] border-[#2A2620] text-[#736A6C] hover:text-[#FFFEEF] hover:border-[#544A4C]'
+                  ? 'bg-accent border-accent text-bg-base font-bold' 
+                  : 'bg-bg-panel border-border text-text-tertiary hover:text-text-primary hover:border-text-secondary'
               }`}
             >
               {fav}
@@ -92,13 +112,13 @@ export default function TerminalPage() {
       </div>
 
       {/* Top Half: Chart & Tools */}
-      <div className="flex-1 min-h-[50%] bg-[#1B1A14] border border-[#2A2620] flex flex-col rounded-[2px] overflow-hidden">
-        <div className="h-[44px] flex items-center px-4 border-b border-[#2A2620] space-x-6 shrink-0 bg-[#141310]">
+      <div className={`flex-1 min-h-[400px] md:min-h-[50%] bg-bg-panel border border-border flex flex-col rounded-[2px] overflow-hidden ${activeMobileTab !== 'chart' ? 'hidden md:flex' : 'flex'}`}>
+        <div className="h-[44px] flex items-center px-4 border-b border-border space-x-6 shrink-0 bg-bg-base">
           <div className="flex items-center space-x-3">
             <select 
               value={symbol} 
               onChange={e => setSymbol(e.target.value)}
-              className="bg-transparent text-[11px] font-bold font-mono tracking-[0.2em] outline-none text-[#FFFEEF] uppercase cursor-pointer"
+              className="bg-transparent text-[11px] font-bold font-mono tracking-[0.2em] outline-none text-text-primary uppercase cursor-pointer"
             >
               <option value="BTC-USD">BTC-USD</option>
               <option value="ETH-USD">ETH-USD</option>
@@ -106,18 +126,18 @@ export default function TerminalPage() {
             </select>
             <button 
               onClick={handleToggleFav}
-              className={`p-1 transition-colors ${isFav ? 'text-[#FFB547]' : 'text-[#2A2620] hover:text-[#736A6C]'}`}
+              className={`p-1 transition-colors ${isFav ? 'text-accent' : 'text-border hover:text-text-tertiary'}`}
             >
               <Star size={14} fill={isFav ? "currentColor" : "none"} />
             </button>
           </div>
-          <div className="w-[1px] h-4 bg-[#2A2620]" />
-          <div className="flex space-x-4 text-[10px] font-mono text-[#736A6C] uppercase tracking-[0.2em]">
+          <div className="w-[1px] h-4 bg-border" />
+          <div className="flex space-x-4 text-[10px] font-mono text-text-tertiary uppercase tracking-[0.2em]">
             {['1m', '5m', '15m', '1H', '4H', '1D'].map(inv => (
               <button 
                 key={inv} 
-                onClick={() => setInterval(inv)}
-                className={`hover:text-[#FFFEEF] transition-colors ${interval === inv ? 'text-[#FFB547]' : ''}`}
+                onClick={() => setChartInterval(inv)}
+                className={`hover:text-text-primary transition-colors ${interval === inv ? 'text-accent' : ''}`}
               >
                 {inv}
               </button>
@@ -127,18 +147,46 @@ export default function TerminalPage() {
         <div className="flex-1 relative bg-black">
           <TradingChart symbol={symbol} interval={interval} />
         </div>
+        
+        {/* Market Stats Bar */}
+        <div className="h-[48px] bg-bg-base border-t border-border flex items-center px-6 overflow-x-auto no-scrollbar gap-8 shrink-0">
+          <div className="flex flex-col">
+            <span className="text-[9px] text-text-tertiary uppercase tracking-tighter">24h Vol</span>
+            <span className="text-[11px] font-mono font-bold text-text-primary">
+              ${marketStats ? (parseFloat(marketStats.dayNtlVlm) / 1e6).toFixed(1) + 'M' : '---'}
+            </span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[9px] text-text-tertiary uppercase tracking-tighter">Oracle Price</span>
+            <span className="text-[11px] font-mono font-bold text-text-primary">
+              ${marketStats ? parseFloat(marketStats.oraclePrice).toLocaleString(undefined, { minimumFractionDigits: 1 }) : '---'}
+            </span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[9px] text-text-tertiary uppercase tracking-tighter">Funding Rate</span>
+            <span className="text-[11px] font-mono font-bold text-accent">
+              {marketStats ? (parseFloat(marketStats.funding) * 100).toFixed(4) + '%' : '---'}
+            </span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[9px] text-text-tertiary uppercase tracking-tighter">Open Interest</span>
+            <span className="text-[11px] font-mono font-bold text-text-primary">
+              ${marketStats ? (parseFloat(marketStats.openInterest) * parseFloat(marketStats.markPrice) / 1e6).toFixed(1) + 'M' : '---'}
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* Bottom Half: Order Book and Order Entry */}
-      <div className="flex flex-col md:flex-row gap-6 shrink-0 md:h-[40%] md:min-h-[300px]">
-        {/* Order Entry (Moved up for mobile) */}
-        <div className="w-full md:w-[350px] bg-[#1B1A14] border border-[#2A2620] rounded-[2px] flex flex-col p-6 shadow-2xl order-1 md:order-2 relative z-30">
+      <div className={`flex flex-col md:flex-row gap-6 shrink-0 md:h-[40%] md:min-h-[300px] ${activeMobileTab === 'chart' ? 'hidden md:flex' : 'flex'}`}>
+        {/* Order Entry */}
+        <div className={`w-full md:w-[350px] bg-bg-panel border border-border rounded-[2px] flex flex-col p-6 shadow-2xl order-1 md:order-2 relative z-30 ${activeMobileTab !== 'order' ? 'hidden md:flex' : 'flex'}`}>
           <div className="flex gap-1 mb-6">
             <button 
               type="button"
               onClick={(e) => { e.stopPropagation(); setIsBuy(true); }}
               className={`flex-1 py-4 font-bold text-[11px] uppercase tracking-[0.2em] rounded-[0px] cursor-pointer transition-all border-none outline-none ${
-                isBuy ? 'bg-[#00B481] text-[#141310]' : 'bg-transparent border border-[#00B481]/30 text-[#00B481] hover:bg-[#00B481]/5'
+                isBuy ? 'bg-success text-bg-base' : 'bg-transparent border border-success/30 text-success hover:bg-success/5'
               }`}
             >
               Buy
@@ -147,7 +195,7 @@ export default function TerminalPage() {
               type="button"
               onClick={(e) => { e.stopPropagation(); setIsBuy(false); }}
               className={`flex-1 py-4 font-bold text-[11px] uppercase tracking-[0.2em] rounded-[0px] cursor-pointer transition-all border-none outline-none ${
-                !isBuy ? 'bg-[#EF4A3C] text-[#141310]' : 'bg-transparent border border-[#EF4A3C]/30 text-[#EF4A3C] hover:bg-[#EF4A3C]/5'
+                !isBuy ? 'bg-danger text-bg-base' : 'bg-transparent border border-danger/30 text-danger hover:bg-danger/5'
               }`}
             >
               Sell
@@ -156,11 +204,11 @@ export default function TerminalPage() {
 
           <div className="space-y-6 text-[11px] font-mono mt-2">
             <div>
-               <label className="text-[10px] text-[#736A6C] uppercase tracking-[0.2em] block mb-2">Order Type</label>
+               <label className="text-[10px] text-text-tertiary uppercase tracking-[0.2em] block mb-2">Order Type</label>
                <select 
                  value={orderType}
                  onChange={e => setOrderType(e.target.value)}
-                 className="w-full bg-[#141310] border border-[#2A2620] px-3 py-2 rounded-[0px] text-[#FFFEEF] outline-none appearance-none cursor-pointer"
+                 className="w-full bg-bg-base border border-border px-3 py-2 rounded-[0px] text-text-primary outline-none appearance-none cursor-pointer"
                >
                  <option value="Market">Market</option>
                  <option value="Limit">Limit</option>
@@ -168,19 +216,19 @@ export default function TerminalPage() {
                </select>
             </div>
             <div>
-               <label className="text-[10px] text-[#736A6C] uppercase tracking-[0.2em] block mb-2">Size (USD)</label>
+               <label className="text-[10px] text-text-tertiary uppercase tracking-[0.2em] block mb-2">Size (USD)</label>
                <input 
                  type="text" 
                  value={size}
                  onChange={e => setSize(e.target.value)}
                  placeholder="0.00" 
-                 className="w-full bg-[#141310] border border-[#2A2620] px-3 py-2 rounded-[0px] text-[#FFFEEF] outline-none font-mono" 
+                 className="w-full bg-bg-base border border-border px-3 py-2 rounded-[0px] text-text-primary outline-none font-mono" 
                />
             </div>
             <div>
-               <div className="flex justify-between text-[10px] text-[#736A6C] uppercase tracking-[0.2em] mb-2">
+               <div className="flex justify-between text-[10px] text-text-tertiary uppercase tracking-[0.2em] mb-2">
                  <span>Leverage</span>
-                 <span className="text-[#FFB547] font-bold">{leverage}x</span>
+                 <span className="text-accent font-bold">{leverage}x</span>
                </div>
                <input 
                  type="range" 
@@ -189,19 +237,19 @@ export default function TerminalPage() {
                  step="1"
                  value={leverage}
                  onChange={e => setLeverage(parseInt(e.target.value))}
-                 className="w-full h-2 bg-[#2A2620] rounded-full appearance-none accent-[#FFB547] cursor-pointer" 
+                 className="w-full h-2 bg-border rounded-full appearance-none accent-accent cursor-pointer" 
                />
             </div>
             
-            <div className="pt-4 border-t border-[#2A2620]">
+            <div className="pt-4 border-t border-border">
               <button 
                 type="button"
                 onClick={handleExecute}
                 disabled={executing || !wallet.connected}
                 className={`w-full py-4 font-bold text-[11px] uppercase tracking-[0.3em] rounded-[0px] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center ${
                   isBuy 
-                    ? 'bg-[#00B481] text-[#141310] hover:bg-[#00966B]' 
-                    : 'bg-[#EF4A3C] text-[#141310] hover:bg-[#D63E32]'
+                    ? 'bg-success text-bg-base hover:bg-success/90' 
+                    : 'bg-danger text-bg-base hover:bg-danger/90'
                 }`}
               >
                 {executing ? <Loader2 className="animate-spin" size={16} /> : `Execute ${isBuy ? 'Buy' : 'Sell'}`}
@@ -211,10 +259,27 @@ export default function TerminalPage() {
         </div>
 
         {/* Order Book */}
-        <div className="flex-1 min-h-[400px] md:min-h-0 bg-[#1B1A14] border border-[#2A2620] rounded-[2px] flex flex-col focus-shadow overflow-hidden order-2 md:order-1">
-          <div className="p-3 border-b border-[#2A2620] text-[10px] text-[#736A6C] font-mono tracking-[0.2em] uppercase bg-[#141310]">Order Book</div>
+        <div className={`flex-1 min-h-[400px] md:min-h-0 bg-bg-panel border border-border rounded-[2px] flex flex-col focus-shadow overflow-hidden order-2 md:order-1 ${activeMobileTab !== 'order' ? 'hidden md:flex' : 'flex'}`}>
+          <div className="p-3 border-b border-border text-[10px] text-text-tertiary font-mono tracking-[0.2em] uppercase bg-bg-base">Order Book</div>
           <OrderBook symbol={symbol} />
         </div>
+      </div>
+
+      {/* Mobile Tab Bar */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 h-[64px] bg-bg-panel border-t border-border flex items-center justify-around px-4 z-50">
+        <button 
+          onClick={() => setActiveMobileTab('order')}
+          className={`flex-1 flex items-center justify-center h-full transition-all ${activeMobileTab === 'order' ? 'text-accent border-t-2 border-accent' : 'text-text-tertiary'}`}
+        >
+          <div className="text-[10px] uppercase font-bold tracking-[0.2em]">Order</div>
+        </button>
+        <div className="w-[1px] h-8 bg-border" />
+        <button 
+          onClick={() => setActiveMobileTab('chart')}
+          className={`flex-1 flex items-center justify-center h-full transition-all ${activeMobileTab === 'chart' ? 'text-accent border-t-2 border-accent' : 'text-text-tertiary'}`}
+        >
+          <div className="text-[10px] uppercase font-bold tracking-[0.2em]">Charts</div>
+        </button>
       </div>
     </div>
   );

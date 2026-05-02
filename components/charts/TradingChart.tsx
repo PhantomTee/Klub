@@ -14,14 +14,15 @@ export function TradingChart({ symbol = 'BTC-USD', interval = '1m' }: { symbol?:
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
+    const isDark = document.documentElement.classList.contains('dark');
     const chart = createChart(chartContainerRef.current, {
       layout: {
-        background: { type: ColorType.Solid, color: '#000000' },
-        textColor: '#C6B6BA',
+        background: { type: ColorType.Solid, color: 'transparent' },
+        textColor: isDark ? '#C6B6BA' : '#544A4C',
       },
       grid: {
-        vertLines: { color: '#1B1A14' },
-        horzLines: { color: '#1B1A14' },
+        vertLines: { color: isDark ? '#1B1A14' : '#E8E5DA' },
+        horzLines: { color: isDark ? '#1B1A14' : '#E8E5DA' },
       },
       width: chartContainerRef.current.clientWidth,
       height: chartContainerRef.current.clientHeight,

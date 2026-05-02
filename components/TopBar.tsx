@@ -4,6 +4,7 @@ import { usePortfolioStore } from '../store/portfolioStore';
 import { Menu } from 'lucide-react';
 import { useUIStore } from '../store/uiStore';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { ThemeToggle } from './ThemeToggle';
 
 export function TopBar() {
   const { snapshot } = usePortfolioStore();
@@ -13,34 +14,37 @@ export function TopBar() {
   const mrkPrice = prices['BTC-USD'] ? prices['BTC-USD'].toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "---";
 
   return (
-    <div className="fixed top-0 left-0 right-0 h-[64px] bg-[#141310] border-b border-[#2A2620] z-40 flex items-center justify-between px-6 md:px-10">
+    <div className="fixed top-0 left-0 right-0 h-[64px] bg-bg-base border-b border-border z-40 flex items-center justify-between px-6 md:px-10">
       <div className="flex items-center">
         <button 
           onClick={toggleSidebar}
-          className="mr-6 text-[#C6B6BA] hover:text-[#FFFEEF] transition-colors p-2 -ml-2"
+          className="mr-6 text-text-secondary hover:text-text-primary transition-colors p-2 -ml-2"
         >
           <Menu size={20} />
         </button>
-        <Link href="/" className="font-sans font-bold text-[16px] tracking-tight text-[#FFFEEF] md:hidden hover:opacity-80 transition-opacity">(Klub.)</Link>
+        <Link href="/" className="font-sans font-bold text-[16px] tracking-tight text-text-primary md:hidden hover:opacity-80 transition-opacity">(Klub.)</Link>
       </div>
 
       <div className="flex items-center space-x-6 md:space-x-8">
-        <div className="hidden lg:flex items-center space-x-8 text-[11px] font-mono text-[#C6B6BA] uppercase tracking-[0.2em]">
+        <div className="hidden lg:flex items-center space-x-8 text-[11px] font-mono text-text-secondary uppercase tracking-[0.2em]">
           <div className="flex space-x-6">
             <div className="flex space-x-3">
-              <span className="text-[#736A6C]">BTC-USD</span>
-              <span className="text-[#FFFEEF] font-bold">${mrkPrice}</span>
-              <span className="text-[#00B481]">+1.24%</span>
+              <span className="text-text-tertiary">BTC-USD</span>
+              <span className="text-text-primary font-bold">${mrkPrice}</span>
+              <span className="text-success">+1.24%</span>
             </div>
-            <div className="w-[1px] h-3 bg-[#2A2620] self-center" />
+            <div className="w-[1px] h-3 bg-border self-center" />
             <div className="flex space-x-3">
-              <span className="text-[#736A6C]">Margin</span>
-              <span className="text-[#FFFEEF] font-bold">${balance}</span>
+              <span className="text-text-tertiary">Margin</span>
+              <span className="text-text-primary font-bold">${balance}</span>
             </div>
           </div>
         </div>
         
-        <WalletMultiButton style={{ backgroundColor: '#1B1A14', border: '1px solid #2A2620', color: '#FFFEEF', fontSize: '10px', height: '36px', textTransform: 'uppercase', letterSpacing: '0.1em', borderRadius: '2px' }} />
+        <div className="flex items-center space-x-3">
+          <ThemeToggle />
+          <WalletMultiButton style={{ backgroundColor: 'var(--bg-panel)', border: '1px solid var(--border)', color: 'var(--text-primary)', fontSize: '10px', height: '36px', textTransform: 'uppercase', letterSpacing: '0.1em', borderRadius: '2px' }} />
+        </div>
       </div>
     </div>
   );

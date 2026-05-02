@@ -1,20 +1,19 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: var(--font-sans), 'IBM Plex Sans', sans-serif;
-  --font-mono: var(--font-mono), 'IBM Plex Sans Condensed', monospace;
+  --font-sans: 'IBM Plex Sans', sans-serif;
+  --font-mono: 'IBM Plex Sans Condensed', monospace;
 
-  --color-bg-base: #141310;
-  --color-bg-panel: #1B1A14;
-  --color-bg-surface: #544A4C;
-  --color-bg-hover: #1B1A14;
-  --color-border: #2A2620;
-  --color-border-subtle: #1B1A14;
+  --color-bg-base: var(--bg-base);
+  --color-bg-panel: var(--bg-panel);
+  --color-bg-surface: var(--bg-surface);
+  --color-bg-hover: var(--bg-hover);
+  --color-border: var(--border);
   
-  --color-text-primary: #FFFEEF;
-  --color-text-secondary: #C6B6BA;
-  --color-text-tertiary: #736A6C;
-  
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+
   --color-accent: #FFB547;
   --color-accent-dim: #D48F2A;
   
@@ -27,9 +26,42 @@
 }
 
 :root {
-  background-color: var(--color-bg-base);
-  color: var(--color-text-primary);
+  --bg-base: #FDFBEE;
+  --bg-panel: #FFFFFF;
+  --bg-surface: #E8E5DA;
+  --bg-hover: #F9F7EF;
+  --border: #D8D4C7;
+  --text-primary: #141310;
+  --text-secondary: #544A4C;
+  --text-tertiary: #736A6C;
+
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
+
+.dark {
+  --bg-base: #141310;
+  --bg-panel: #1B1A14;
+  --bg-surface: #544A4C;
+  --bg-hover: #1B1A14;
+  --border: #2A2620;
+  --text-primary: #FFFEEF;
+  --text-secondary: #C6B6BA;
+  --text-tertiary: #736A6C;
+}
+
+body {
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+}
+
+/* Base styles for common elements to use variables */
+.bg-base { background-color: var(--bg-base); }
+.bg-panel { background-color: var(--bg-panel); }
+.border-base { border-color: var(--border); }
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
 
 /* Custom Range Input Styles */
 input[type=range] {

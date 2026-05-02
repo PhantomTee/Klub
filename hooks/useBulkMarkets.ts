@@ -17,27 +17,39 @@ export function useBulkMarkets(symbol: string, interval: string) {
   const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-    const wsUrl = process.env.NEXT_PUBLIC_BULK_WS || 'wss://exchange-ws1.bulk.trade';
+    const wsUrl = process.env.NEXT_PUBLIC_BULK_WS || 'wss://exchange-ws.bulk.trade';
+    const coin = symbol.split('-')[0];
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
     ws.onopen = () => {
       ws.send(JSON.stringify({
         method: 'subscribe',
-        subscription: [{ type: 'candle', symbol, interval }]
+        subscription: { type: 'candle', coin, interval }
       }));
     };
 
     ws.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data);
-        if (msg.topic === `candle.${symbol}.${interval}` && msg.data) {
-           if (Array.isArray(msg.data.candles)) {
-             setCandles(msg.data.candles);
+        if (msg.channel === 'candle' && msg.data) {
+           const c = msg.data;
+           // Ensure it's the right candle
+           if (c.s === coin && c.i === interval) {
+             setCandles([{
+               t: Number(c.t),
+               T: Number(c.T),
+               o: parseFloat(c.o),
+               h: parseFloat(c.h),
+               l: parseFloat(c.l),
+               c: parseFloat(c.c),
+               v: parseFloat(c.v),
+               n: Number(c.n)
+             }]);
            }
         }
       } catch (e) {
-        console.error('WS Error parsing message', e);
+        // console.error('WS Error parsing message', e);
       }
     };
 

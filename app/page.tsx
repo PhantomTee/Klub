@@ -73,9 +73,6 @@ export default function HomePage() {
           >
             Launch Terminal
           </Link>
-          <button className="px-10 py-5 border border-[#2A2620] text-[#FFFEEF] font-sans font-bold text-sm uppercase tracking-[0.15em] hover:bg-[#1B1A14] transition-all">
-            Join Waitlist
-          </button>
         </motion.div>
       </main>
 

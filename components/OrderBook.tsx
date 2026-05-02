@@ -33,12 +33,12 @@ export function OrderBook({ symbol }: OrderBookProps) {
       if (!isMounted) return;
       
       const processLevels = (levels: any[]) => {
-        let total = 0;
+        let cumulativeSize = 0;
         return (levels || []).map((l: any) => {
           const px = parseFloat(l.px || l.price);
           const sz = parseFloat(l.sz || l.size);
-          total += sz;
-          return { price: px, size: sz, total };
+          cumulativeSize += sz;
+          return { price: px, size: sz, total: cumulativeSize };
         });
       };
 
@@ -54,7 +54,8 @@ export function OrderBook({ symbol }: OrderBookProps) {
       }
     }).catch(err => console.error('Initial L2 fetch error:', err));
 
-    const ws = new WebSocket('wss://exchange-ws1.bulk.trade');
+    const wsUrl = process.env.NEXT_PUBLIC_BULK_WS || 'wss://exchange-ws.bulk.trade';
+    const ws = new WebSocket(wsUrl);
     
     ws.onopen = () => {
       if (isMounted) setIsConnected(true);
@@ -70,25 +71,26 @@ export function OrderBook({ symbol }: OrderBookProps) {
         const msg = JSON.parse(event.data);
         if (msg.channel === 'l2Book' && msg.data) {
           const l2Data = msg.data;
-          
+          if (l2Data.coin !== coin) return;
+
           const processLevels = (levels: any[]) => {
-            let total = 0;
+            let totalDepth = 0;
             return levels.map((l: any) => {
               const px = parseFloat(l.px);
               const sz = parseFloat(l.sz);
-              total += sz;
-              return { price: px, size: sz, total };
+              totalDepth += sz;
+              return { price: px, size: sz, total: totalDepth };
             });
           };
 
-          const newBids = processLevels(l2Data.levels[0]);
-          const newAsks = processLevels(l2Data.levels[1]).sort((a, b) => b.price - a.price);
+          const rawBids = l2Data.levels[0];
+          const rawAsks = l2Data.levels[1];
 
-          setBids(newBids);
-          setAsks(newAsks);
+          setBids(processLevels(rawBids));
+          setAsks(processLevels(rawAsks).sort((a, b) => b.price - a.price));
 
-          if (newBids.length > 0 && newAsks.length > 0) {
-            const mid = (newBids[0].price + newAsks[newAsks.length - 1].price) / 2;
+          if (rawBids.length > 0 && rawAsks.length > 0) {
+            const mid = (parseFloat(rawBids[0].px) + parseFloat(rawAsks[0].px)) / 2;
             setLastPrice(prev => {
               if (prev !== 0) {
                 if (mid > prev) setPriceChange('up');
@@ -127,9 +129,9 @@ export function OrderBook({ symbol }: OrderBookProps) {
   );
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 bg-[#1B1A14]">
+    <div className="flex-1 flex flex-col min-h-0 bg-bg-panel">
       {/* Table Header */}
-      <div className="flex px-4 py-2 border-b border-[#2A2620] text-[9px] font-mono text-[#544A4C] uppercase tracking-widest bg-[#141310]">
+      <div className="flex px-4 py-2 border-b border-border text-[9px] font-mono text-text-tertiary uppercase tracking-widest bg-bg-base">
         <span className="w-1/3">Price</span>
         <span className="w-1/3 text-right">Size</span>
         <span className="w-1/3 text-right">Total</span>
@@ -139,42 +141,42 @@ export function OrderBook({ symbol }: OrderBookProps) {
         {/* Asks (Sells) */}
         <div className="flex flex-col-reverse justify-end overflow-hidden">
           {asks.map((ask, i) => (
-            <div key={i} className="relative flex px-4 h-5 items-center text-[10px] font-mono group hover:bg-[#FFFEEF]/5 transition-colors">
+            <div key={i} className="relative flex px-4 h-5 items-center text-[10px] font-mono group hover:bg-white/5 transition-colors cursor-pointer">
               <div 
-                className="absolute right-0 top-0 bottom-0 bg-[#EF4A3C]/10 transition-all duration-500" 
+                className="absolute right-0 top-[1px] bottom-[1px] bg-danger/20 transition-all duration-300" 
                 style={{ width: `${(ask.total / maxTotal) * 100}%` }} 
               />
-              <span className="w-1/3 text-[#EF4A3C] z-10">{ask.price.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span>
-              <span className="w-1/3 text-right text-[#C6B6BA] z-10">{ask.size.toFixed(3)}</span>
-              <span className="w-1/3 text-right text-[#736A6C] z-10">{ask.total.toFixed(3)}</span>
+              <span className="w-1/3 text-danger font-medium z-10">{ask.price.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span>
+              <span className="w-1/3 text-right text-text-secondary z-10">{ask.size.toFixed(3)}</span>
+              <span className="w-1/3 text-right text-text-tertiary z-10">{(ask.total / 1000).toFixed(1)}k</span>
             </div>
           ))}
         </div>
 
         {/* Spread / Mid Price */}
-        <div className="px-4 py-3 border-y border-[#2A2620] bg-[#141310] shrink-0 flex items-center justify-between">
+        <div className="px-4 py-2 border-y border-border bg-bg-base/50 shrink-0 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className={`text-sm font-bold font-mono transition-colors duration-300 ${priceChange === 'up' ? 'text-[#00B481]' : 'text-[#EF4A3C]'}`}>
+            <div className={`text-base font-bold font-mono transition-colors duration-300 ${priceChange === 'up' ? 'text-success' : 'text-danger'}`}>
               {lastPrice > 0 ? lastPrice.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : '---'}
             </div>
-            <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-[#00B481] shadow-[0_0_8px_#00B481]' : 'bg-[#EF4A3C] shadow-[0_0_8px_#EF4A3C]'}`} title={isConnected ? 'Live' : 'Disconnected'} />
+            <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-success animate-pulse' : 'bg-danger'}`} />
           </div>
-          <div className="text-[9px] font-mono text-[#544A4C] uppercase tracking-tighter">
-            Spread: <span className="text-[#C6B6BA]">{asks.length > 0 && bids.length > 0 ? (asks[asks.length-1].price - bids[0].price).toFixed(1) : '---'}</span>
+          <div className="text-[10px] font-mono text-text-tertiary">
+            ${asks.length > 0 && bids.length > 0 ? (asks[asks.length-1].price - bids[0].price).toFixed(1) : '---'}
           </div>
         </div>
 
         {/* Bids (Buys) */}
         <div className="flex flex-col overflow-hidden">
           {bids.map((bid, i) => (
-            <div key={i} className="relative flex px-4 h-5 items-center text-[10px] font-mono group hover:bg-[#FFFEEF]/5 transition-colors">
+            <div key={i} className="relative flex px-4 h-5 items-center text-[10px] font-mono group hover:bg-white/5 transition-colors cursor-pointer">
               <div 
-                className="absolute right-0 top-0 bottom-0 bg-[#00B481]/10 transition-all duration-500" 
+                className="absolute right-0 top-[1px] bottom-[1px] bg-success/20 transition-all duration-300" 
                 style={{ width: `${(bid.total / maxTotal) * 100}%` }} 
               />
-              <span className="w-1/3 text-[#00B481] z-10">{bid.price.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span>
-              <span className="w-1/3 text-right text-[#C6B6BA] z-10">{bid.size.toFixed(3)}</span>
-              <span className="w-1/3 text-right text-[#736A6C] z-10">{bid.total.toFixed(3)}</span>
+              <span className="w-1/3 text-success font-medium z-10">{bid.price.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span>
+              <span className="w-1/3 text-right text-text-secondary z-10">{bid.size.toFixed(3)}</span>
+              <span className="w-1/3 text-right text-text-tertiary z-10">{(bid.total / 1000).toFixed(1)}k</span>
             </div>
           ))}
         </div>
