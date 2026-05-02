@@ -79,11 +79,11 @@ export function TradingChart({ symbol = 'BTC-USD', interval = '1m' }: { symbol?:
              close: parseFloat(c.c)
            })).sort((a: any, b: any) => a.time - b.time);
 
-           if (lwcData.length > 10) {
+           if (!dataSetRef.current) {
              const uniqueData = Array.from(new Map(lwcData.map((item: any) => [item.time, item])).values()) as any[];
              series.setData(uniqueData);
              dataSetRef.current = true;
-           } else if (dataSetRef.current) {
+           } else {
              for (const c of lwcData) {
                try {
                  series.update(c);

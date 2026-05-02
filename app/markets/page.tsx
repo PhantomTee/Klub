@@ -22,17 +22,45 @@ export default function MarketsPage() {
   useEffect(() => {
     async function loadMarkets() {
       try {
-        const res = await fetchMarketStats();
-        // Adjust for potential wrapping object
-        const stats = Array.isArray(res) ? res : res.markets || res.stats || [];
-        const mappedMarkets = stats.map((s: any) => ({
-          symbol: s.symbol || s.coin,
-          price: parseFloat(s.lastPrice || s.markPrice || '0'),
-          change24h: parseFloat(s.priceChangePercent || '0') * 100, // assuming decimal, convert to %
-          volume24h: parseFloat(s.dayNtlVlm || s.quoteVolume || s.volume || '0'),
-        }));
+        const { fetchMarketStats, fetchExchangeInfo } = await import('../../lib/bulk-client');
+        const [statsRes, infoRes] = await Promise.all([
+          fetchMarketStats().catch(() => []),
+          fetchExchangeInfo().catch(() => [])
+        ]);
         
-        setMarkets(mappedMarkets);
+        const stats = Array.isArray(statsRes) ? statsRes : statsRes.markets || statsRes.stats || [];
+        const info = Array.isArray(infoRes) ? infoRes : infoRes.markets || infoRes.universe || [];
+        
+        const symbolsObj: Record<string, any> = {};
+        
+        // Populate from info first
+        info.forEach((m: any) => {
+          const sym = m.name || m.symbol || m.coin;
+          if (sym) {
+            symbolsObj[sym] = {
+              symbol: sym,
+              price: 0,
+              change24h: 0,
+              volume24h: 0
+            };
+          }
+        });
+        
+        // Merge stats
+        stats.forEach((s: any) => {
+          const sym = s.symbol || s.coin;
+          if (sym) {
+            symbolsObj[sym] = {
+              ...symbolsObj[sym],
+              symbol: sym,
+              price: parseFloat(s.lastPrice || s.markPrice || '0') || symbolsObj[sym]?.price || 0,
+              change24h: (parseFloat(s.priceChangePercent || '0') * 100) || symbolsObj[sym]?.change24h || 0,
+              volume24h: parseFloat(s.dayNtlVlm || s.quoteVolume || s.volume || '0') || symbolsObj[sym]?.volume24h || 0
+            };
+          }
+        });
+        
+        setMarkets(Object.values(symbolsObj));
         setLoading(false);
       } catch (e) {
         console.error('Failed to load markets', e);

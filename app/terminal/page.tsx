@@ -29,10 +29,11 @@ export default function TerminalPage() {
   useEffect(() => {
     async function loadSymbols() {
       try {
-        const { fetchMarketStats } = await import('../../lib/bulk-client');
-        const res = await fetchMarketStats();
-        const stats = Array.isArray(res) ? res : res.markets || res.stats || [];
-        const symbols = stats.map((s: any) => s.symbol || s.coin).filter(Boolean);
+        const { fetchExchangeInfo } = await import('../../lib/bulk-client');
+        const res = await fetchExchangeInfo();
+        // Adjust for potential wrapping object or array
+        const markets = Array.isArray(res) ? res : res.markets || res.universe || [];
+        const symbols = markets.map((m: any) => m.name || m.symbol || m.coin).filter(Boolean);
         if (symbols.length > 0) {
           setAvailableMarkets(symbols);
         }
