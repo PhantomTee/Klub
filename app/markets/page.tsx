@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Search, Star } from 'lucide-react';
 import { motion } from 'motion/react';
-import { fetchExchangeInfo, fetchTicker } from '../../lib/bulk-client';
+import { fetchMarketStats } from '../../lib/bulk-client';
 
 interface MarketData {
   symbol: string;
@@ -22,19 +22,16 @@ export default function MarketsPage() {
   useEffect(() => {
     async function loadMarkets() {
       try {
-        const info = await fetchExchangeInfo();
-        const symbols = info.universe.map((m: any) => m.name);
-        
-        // In a real app we'd fetch all tickers in one go if API supports
-        // For now, let's mock the live updates if we can't batch
-        const initialMarkets = symbols.map((s: string) => ({
-          symbol: s,
-          price: 0,
-          change24h: (Math.random() * 4) - 2, // Mocking change for UI
-          volume24h: Math.random() * 100000000,
+        const stats = await fetchMarketStats();
+        // stats is an array of TickerData objects with 'symbol' or 'coin'
+        const mappedMarkets = stats.map((s: any) => ({
+          symbol: s.coin || s.symbol,
+          price: parseFloat(s.lastPrice || s.markPrice || '0'),
+          change24h: parseFloat(s.priceChangePercent || '0') * 100, // assuming decimal, convert to %
+          volume24h: parseFloat(s.dayNtlVlm || '0'),
         }));
         
-        setMarkets(initialMarkets);
+        setMarkets(mappedMarkets);
         setLoading(false);
       } catch (e) {
         console.error('Failed to load markets', e);
@@ -42,6 +39,8 @@ export default function MarketsPage() {
       }
     }
     loadMarkets();
+    const inv = setInterval(loadMarkets, 30000);
+    return () => clearInterval(inv);
   }, []);
 
   const filteredMarkets = markets.filter(m => 

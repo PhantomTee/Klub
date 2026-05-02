@@ -17,7 +17,7 @@ export function useBulkMarkets(symbol: string, interval: string) {
   const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-    const wsUrl = process.env.NEXT_PUBLIC_BULK_WS || 'wss://exchange-ws.bulk.trade';
+    const wsUrl = process.env.NEXT_PUBLIC_BULK_WS || 'wss://exchange-ws1.bulk.trade';
     const coin = symbol.split('-')[0];
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
@@ -25,7 +25,7 @@ export function useBulkMarkets(symbol: string, interval: string) {
     ws.onopen = () => {
       ws.send(JSON.stringify({
         method: 'subscribe',
-        subscription: { type: 'candle', coin, interval }
+        subscription: [{ type: 'candle', symbol, interval }]
       }));
     };
 
@@ -33,10 +33,10 @@ export function useBulkMarkets(symbol: string, interval: string) {
       try {
         const msg = JSON.parse(event.data);
         if (msg.channel === 'candle' && msg.data) {
-           const c = msg.data;
-           // Ensure it's the right candle
-           if (c.s === coin && c.i === interval) {
-             setCandles([{
+           const data = msg.data;
+           if (Array.isArray(data)) {
+             // Historical dump
+             const history = data.map((c: any) => ({
                t: Number(c.t),
                T: Number(c.T),
                o: parseFloat(c.o),
@@ -45,7 +45,22 @@ export function useBulkMarkets(symbol: string, interval: string) {
                c: parseFloat(c.c),
                v: parseFloat(c.v),
                n: Number(c.n)
-             }]);
+             }));
+             setCandles(history);
+           } else {
+             // Single update
+             if (data.s === coin && data.i === interval) {
+               setCandles([{
+                 t: Number(data.t),
+                 T: Number(data.T),
+                 o: parseFloat(data.o),
+                 h: parseFloat(data.h),
+                 l: parseFloat(data.l),
+                 c: parseFloat(data.c),
+                 v: parseFloat(data.v),
+                 n: Number(data.n)
+               }]);
+             }
            }
         }
       } catch (e) {

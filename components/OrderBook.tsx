@@ -54,14 +54,14 @@ export function OrderBook({ symbol }: OrderBookProps) {
       }
     }).catch(err => console.error('Initial L2 fetch error:', err));
 
-    const wsUrl = process.env.NEXT_PUBLIC_BULK_WS || 'wss://exchange-ws.bulk.trade';
+    const wsUrl = process.env.NEXT_PUBLIC_BULK_WS || 'wss://exchange-ws1.bulk.trade';
     const ws = new WebSocket(wsUrl);
     
     ws.onopen = () => {
       if (isMounted) setIsConnected(true);
       ws.send(JSON.stringify({
         method: "subscribe",
-        subscription: { type: "l2Book", coin: coin }
+        subscription: [{ type: "l2Book", symbol }]
       }));
     };
 

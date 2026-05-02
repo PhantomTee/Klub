@@ -3,9 +3,13 @@ import { useState, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { TradingChart } from '../../components/charts/TradingChart';
 import { OrderBook } from '../../components/OrderBook';
+import { RecentTrades } from '../../components/RecentTrades';
+import { TradeTabs } from '../../components/TradeTabs';
 import { fetchMarketStats } from '../../lib/bulk-client';
 import { useUIStore } from '../../store/uiStore';
 import { Star, Loader2 } from 'lucide-react';
+
+import { useTicker } from '../../hooks/useTicker';
 
 export default function TerminalPage() {
   const [symbol, setSymbol] = useState('BTC-USD');
@@ -15,31 +19,13 @@ export default function TerminalPage() {
   const [size, setSize] = useState('');
   const [leverage, setLeverage] = useState(10);
   const [executing, setExecuting] = useState(false);
-  const [marketStats, setMarketStats] = useState<any>(null);
   const [activeMobileTab, setActiveMobileTab] = useState<'chart' | 'order' | 'trade'>('chart');
 
   const { favorites, toggleFavorite } = useUIStore();
   const wallet = useWallet();
-
-  useEffect(() => {
-    async function loadStats() {
-      try {
-        const stats = await fetchMarketStats();
-        // Hyperliquid format: list of stats
-        const coin = symbol.split('-')[0];
-        const coinStats = stats.find((s: any) => s.coin === coin) || stats[0];
-        setMarketStats(coinStats);
-      } catch (e) {
-        // console.error('Failed to load stats', e);
-      }
-    }
-    loadStats();
-    const statsInterval = window.setInterval(loadStats, 10000);
-    return () => window.clearInterval(statsInterval);
-  }, [symbol]);
+  const ticker = useTicker(symbol);
 
   const handleExecute = async () => {
-    console.log('Executing order:', { symbol, isBuy, size, leverage, orderType });
     if (!wallet.connected || !wallet.publicKey) {
       alert('Please connect your wallet first');
       return;
@@ -51,7 +37,12 @@ export default function TerminalPage() {
 
     setExecuting(true);
     try {
-      // Direct integration with Bulk Trade Execution API using Agent format
+      const markPrice = ticker ? parseFloat(ticker.markPrice) : 0;
+      if (markPrice === 0) throw new Error('Mark price unavailable');
+      
+      const contractSize = parseFloat(size) / markPrice;
+
+      // Direct integration with Bulk Trade Execution API
       const res = await fetch('/api/execute', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -59,9 +50,9 @@ export default function TerminalPage() {
           account: wallet.publicKey.toBase58(),
           actions: [{
             m: {
-              c: symbol.split('-')[0],
+              c: symbol,
               b: isBuy,
-              sz: parseFloat(size),
+              sz: contractSize,
               r: false,
               i: false
             }
@@ -153,35 +144,35 @@ export default function TerminalPage() {
           <div className="flex flex-col">
             <span className="text-[9px] text-text-tertiary uppercase tracking-tighter">24h Vol</span>
             <span className="text-[11px] font-mono font-bold text-text-primary">
-              ${marketStats ? (parseFloat(marketStats.dayNtlVlm) / 1e6).toFixed(1) + 'M' : '---'}
+              ${ticker ? (parseFloat(ticker.dayNtlVlm) / 1e6).toFixed(1) + 'M' : '---'}
             </span>
           </div>
           <div className="flex flex-col">
             <span className="text-[9px] text-text-tertiary uppercase tracking-tighter">Oracle Price</span>
             <span className="text-[11px] font-mono font-bold text-text-primary">
-              ${marketStats ? parseFloat(marketStats.oraclePrice).toLocaleString(undefined, { minimumFractionDigits: 1 }) : '---'}
+              ${ticker ? parseFloat(ticker.oraclePrice).toLocaleString(undefined, { minimumFractionDigits: 1 }) : '---'}
             </span>
           </div>
           <div className="flex flex-col">
             <span className="text-[9px] text-text-tertiary uppercase tracking-tighter">Funding Rate</span>
             <span className="text-[11px] font-mono font-bold text-accent">
-              {marketStats ? (parseFloat(marketStats.funding) * 100).toFixed(4) + '%' : '---'}
+              {ticker ? (parseFloat(ticker.funding) * 100).toFixed(4) + '%' : '---'}
             </span>
           </div>
           <div className="flex flex-col">
             <span className="text-[9px] text-text-tertiary uppercase tracking-tighter">Open Interest</span>
             <span className="text-[11px] font-mono font-bold text-text-primary">
-              ${marketStats ? (parseFloat(marketStats.openInterest) * parseFloat(marketStats.markPrice) / 1e6).toFixed(1) + 'M' : '---'}
+              ${ticker ? (parseFloat(ticker.openInterest) * parseFloat(ticker.markPrice) / 1e6).toFixed(1) + 'M' : '---'}
             </span>
           </div>
         </div>
       </div>
 
-      {/* Bottom Half: Order Book and Order Entry */}
-      <div className={`flex flex-col md:flex-row gap-6 shrink-0 md:h-[40%] md:min-h-[300px] ${activeMobileTab === 'chart' ? 'hidden md:flex' : 'flex'}`}>
+      {/* Bottom Half: Order Book, Recent Trades and Order Entry */}
+      <div className={`flex flex-col md:flex-row gap-6 shrink-0 h-auto md:h-[350px] ${activeMobileTab === 'chart' ? 'hidden md:flex' : 'flex'}`}>
         {/* Order Entry */}
-        <div className={`w-full md:w-[350px] bg-bg-panel border border-border rounded-[2px] flex flex-col p-6 shadow-2xl order-1 md:order-2 relative z-30 ${activeMobileTab !== 'order' ? 'hidden md:flex' : 'flex'}`}>
-          <div className="flex gap-1 mb-6">
+        <div className={`w-full md:w-[320px] bg-bg-panel border border-border rounded-[2px] flex flex-col p-5 shadow-2xl order-1 md:order-3 relative z-30 shrink-0 ${activeMobileTab !== 'order' ? 'hidden md:flex' : 'flex'}`}>
+          <div className="flex gap-1 mb-5">
             <button 
               type="button"
               onClick={(e) => { e.stopPropagation(); setIsBuy(true); }}
@@ -259,10 +250,21 @@ export default function TerminalPage() {
         </div>
 
         {/* Order Book */}
-        <div className={`flex-1 min-h-[400px] md:min-h-0 bg-bg-panel border border-border rounded-[2px] flex flex-col focus-shadow overflow-hidden order-2 md:order-1 ${activeMobileTab !== 'order' ? 'hidden md:flex' : 'flex'}`}>
+        <div className={`flex-1 min-h-[400px] md:min-h-0 bg-bg-panel border border-border rounded-[2px] flex flex-col overflow-hidden order-2 md:order-1 ${activeMobileTab === 'chart' ? 'hidden md:flex' : 'flex'}`}>
           <div className="p-3 border-b border-border text-[10px] text-text-tertiary font-mono tracking-[0.2em] uppercase bg-bg-base">Order Book</div>
           <OrderBook symbol={symbol} />
         </div>
+
+        {/* Recent Trades (Tape) */}
+        <div className={`flex-1 min-h-[400px] md:min-h-0 bg-bg-panel border border-border rounded-[2px] flex flex-col overflow-hidden order-3 md:order-2 ${activeMobileTab === 'chart' ? 'hidden md:flex' : 'flex'}`}>
+          <div className="p-3 border-b border-border text-[10px] text-text-tertiary font-mono tracking-[0.2em] uppercase bg-bg-base">Recent Trades</div>
+          <RecentTrades symbol={symbol} />
+        </div>
+      </div>
+
+      {/* Trade Tabs: Positions & Orders */}
+      <div className={`shrink-0 ${activeMobileTab === 'chart' ? 'hidden md:block' : 'block'}`}>
+        <TradeTabs />
       </div>
 
       {/* Mobile Tab Bar */}
