@@ -140,8 +140,8 @@ export default function TerminalPage() {
 
       {/* Top Half: Chart & Tools */}
       <div className={`flex-1 min-h-0 bg-bg-panel border border-border flex flex-col rounded-[2px] overflow-hidden ${activeMobileTab !== 'chart' ? 'hidden md:flex' : 'flex'}`}>
-        <div className="h-[44px] flex items-center px-4 border-b border-border space-x-6 shrink-0 bg-bg-base">
-          <div className="flex items-center space-x-3">
+        <div className="h-[48px] flex items-center px-4 border-b border-border gap-4 shrink-0 bg-bg-base overflow-x-auto no-scrollbar">
+          <div className="flex items-center space-x-3 shrink-0">
             <select 
               value={symbol} 
               onChange={e => setSymbol(e.target.value)}
@@ -158,8 +158,8 @@ export default function TerminalPage() {
               <Star size={14} fill={isFav ? "currentColor" : "none"} />
             </button>
           </div>
-          <div className="w-[1px] h-4 bg-border" />
-          <div className="flex space-x-4 text-[10px] font-mono text-text-tertiary uppercase tracking-[0.2em]">
+          <div className="w-[1px] h-4 bg-border shrink-0" />
+          <div className="flex space-x-4 text-[10px] font-mono text-text-tertiary uppercase tracking-[0.2em] shrink-0">
             {['1m', '5m', '15m', '1H', '4H', '1D'].map(inv => (
               <button 
                 key={inv} 
@@ -170,37 +170,39 @@ export default function TerminalPage() {
               </button>
             ))}
           </div>
+
+          <div className="w-[1px] h-4 bg-border shrink-0 hidden md:block ml-2" />
+
+          {/* Market Stats Bar */}
+          <div className="flex items-center gap-6 shrink-0 ml-2">
+            <div className="flex flex-col">
+              <span className="text-[9px] text-text-tertiary uppercase tracking-tighter">24h Vol</span>
+              <span className="text-[11px] font-mono font-bold text-text-primary">
+                ${ticker ? (parseFloat(ticker.quoteVolume) / 1e6).toFixed(1) + 'M' : '---'}
+              </span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[9px] text-text-tertiary uppercase tracking-tighter">Oracle Price</span>
+              <span className="text-[11px] font-mono font-bold text-text-primary">
+                ${ticker ? parseFloat(ticker.oraclePrice).toLocaleString(undefined, { minimumFractionDigits: 1 }) : '---'}
+              </span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[9px] text-text-tertiary uppercase tracking-tighter">Funding Rate</span>
+              <span className="text-[11px] font-mono font-bold text-accent">
+                {ticker ? (parseFloat(ticker.fundingRate) * 100).toFixed(4) + '%' : '---'}
+              </span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[9px] text-text-tertiary uppercase tracking-tighter">Open Interest</span>
+              <span className="text-[11px] font-mono font-bold text-text-primary">
+                ${ticker ? (parseFloat(ticker.openInterest) * parseFloat(ticker.markPrice) / 1e6).toFixed(1) + 'M' : '---'}
+              </span>
+            </div>
+          </div>
         </div>
         <div className="flex-1 relative bg-black">
           <TradingChart symbol={symbol} interval={interval} />
-        </div>
-        
-        {/* Market Stats Bar */}
-        <div className="h-[48px] bg-bg-base border-t border-border flex items-center px-6 overflow-x-auto no-scrollbar gap-8 shrink-0">
-          <div className="flex flex-col">
-            <span className="text-[9px] text-text-tertiary uppercase tracking-tighter">24h Vol</span>
-            <span className="text-[11px] font-mono font-bold text-text-primary">
-              ${ticker ? (parseFloat(ticker.quoteVolume) / 1e6).toFixed(1) + 'M' : '---'}
-            </span>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[9px] text-text-tertiary uppercase tracking-tighter">Oracle Price</span>
-            <span className="text-[11px] font-mono font-bold text-text-primary">
-              ${ticker ? parseFloat(ticker.oraclePrice).toLocaleString(undefined, { minimumFractionDigits: 1 }) : '---'}
-            </span>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[9px] text-text-tertiary uppercase tracking-tighter">Funding Rate</span>
-            <span className="text-[11px] font-mono font-bold text-accent">
-              {ticker ? (parseFloat(ticker.fundingRate) * 100).toFixed(4) + '%' : '---'}
-            </span>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[9px] text-text-tertiary uppercase tracking-tighter">Open Interest</span>
-            <span className="text-[11px] font-mono font-bold text-text-primary">
-              ${ticker ? (parseFloat(ticker.openInterest) * parseFloat(ticker.markPrice) / 1e6).toFixed(1) + 'M' : '---'}
-            </span>
-          </div>
         </div>
       </div>
 

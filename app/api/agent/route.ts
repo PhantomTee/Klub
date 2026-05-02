@@ -87,6 +87,12 @@ export async function POST(req: Request) {
     }
 
     const data = await response.json();
+    
+    if (data.error) {
+      const errMsg = typeof data.error === 'object' ? data.error.message : data.error;
+      throw new Error(`API Error: ${errMsg}`);
+    }
+
     const content = data.choices?.[0]?.message?.content || "{}";
     const cleaned = content.replace(/^```json\n?|^```\n?/g, '').replace(/\n?```$/g, '').trim();
     

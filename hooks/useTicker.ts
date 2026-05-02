@@ -20,11 +20,12 @@ export function useTicker(symbol: string) {
   useEffect(() => {
     const wsUrl = 'wss://exchange-ws1.bulk.trade';
     const ws = new WebSocket(wsUrl);
+    const coin = symbol.split('-')[0];
 
     ws.onopen = () => {
       ws.send(JSON.stringify({
         method: 'subscribe',
-        subscription: [{ type: 'ticker', symbol }]
+        subscription: [{ type: 'ticker', symbol: coin }]
       }));
     };
 
