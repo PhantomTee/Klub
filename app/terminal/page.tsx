@@ -2,15 +2,17 @@
 import { useState, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { TradingChart } from '../../components/charts/TradingChart';
-import { OrderBook } from '../../components/OrderBook';
 import { RecentTrades } from '../../components/RecentTrades';
 import { TradeTabs } from '../../components/TradeTabs';
+import TickerBar from '../../components/terminal/TickerBar';
+import AdvancedChart from '../../components/terminal/AdvancedChart';
+import OrderBook from '../../components/terminal/OrderBook';
 import { fetchMarketStats } from '../../lib/bulk-client';
 import { useUIStore } from '../../store/uiStore';
 import { usePortfolioStore } from '../../store/portfolioStore';
 import { Star, Loader2 } from 'lucide-react';
 
-import { useTicker } from '../../hooks/useTicker';
+import { useMarketStore } from '../../store/marketStore';
 
 export default function TerminalPage() {
   const [symbol, setSymbol] = useState('BTC-USD');
@@ -18,6 +20,7 @@ export default function TerminalPage() {
   const [isBuy, setIsBuy] = useState(true);
   const [orderType, setOrderType] = useState('Market');
   const [size, setSize] = useState('');
+  const [price, setPrice] = useState('');
   const [leverage, setLeverage] = useState(10);
   const [executing, setExecuting] = useState(false);
   const [activeMobileTab, setActiveMobileTab] = useState<'chart' | 'order' | 'trade'>('chart');
@@ -26,7 +29,19 @@ export default function TerminalPage() {
   const { favorites, toggleFavorite } = useUIStore();
   const { snapshot } = usePortfolioStore();
   const wallet = useWallet();
-  const ticker = useTicker(symbol);
+  const { ticker, selectedPrice } = useMarketStore();
+
+  useEffect(() => {
+    if (selectedPrice && orderType === 'Limit') {
+      setPrice(selectedPrice);
+    }
+  }, [selectedPrice, orderType]);
+
+  useEffect(() => {
+    if (orderType === 'Market' && ticker?.lastPrice) {
+      setPrice(parseFloat(ticker.lastPrice).toFixed(2));
+    }
+  }, [ticker, orderType]);
 
   useEffect(() => {
     async function loadSymbols() {
@@ -77,6 +92,10 @@ export default function TerminalPage() {
       if (markPrice === 0) throw new Error('Mark price unavailable');
       
       const contractSize = parseFloat(size) / markPrice;
+      
+      const orderAction = orderType === 'Limit' 
+        ? { l: { c: symbol, b: isBuy, sz: contractSize, px: parseFloat(price), r: false, i: false } }
+        : { m: { c: symbol, b: isBuy, sz: contractSize, r: false, i: false } };
 
       // Direct integration with Bulk Trade Execution API
       const res = await fetch('/api/execute', {
@@ -84,15 +103,7 @@ export default function TerminalPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           account: wallet.publicKey.toBase58(),
-          actions: [{
-            m: {
-              c: symbol,
-              b: isBuy,
-              sz: contractSize,
-              r: false,
-              i: false
-            }
-          }]
+          actions: [orderAction]
         })
       });
       const data = await res.json();
@@ -158,51 +169,14 @@ export default function TerminalPage() {
               <Star size={14} fill={isFav ? "currentColor" : "none"} />
             </button>
           </div>
-          <div className="w-[1px] h-4 bg-border shrink-0" />
-          <div className="flex space-x-4 text-[10px] font-mono text-text-tertiary uppercase tracking-[0.2em] shrink-0">
-            {['1m', '5m', '15m', '1H', '4H', '1D'].map(inv => (
-              <button 
-                key={inv} 
-                onClick={() => setChartInterval(inv)}
-                className={`hover:text-text-primary transition-colors ${interval === inv ? 'text-accent' : ''}`}
-              >
-                {inv}
-              </button>
-            ))}
-          </div>
 
           <div className="w-[1px] h-4 bg-border shrink-0 hidden md:block ml-2" />
 
           {/* Market Stats Bar */}
-          <div className="flex items-center gap-6 shrink-0 ml-2">
-            <div className="flex flex-col">
-              <span className="text-[9px] text-text-tertiary uppercase tracking-tighter">24h Vol</span>
-              <span className="text-[11px] font-mono font-bold text-text-primary">
-                ${ticker ? (parseFloat(ticker.quoteVolume) / 1e6).toFixed(1) + 'M' : '---'}
-              </span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[9px] text-text-tertiary uppercase tracking-tighter">Oracle Price</span>
-              <span className="text-[11px] font-mono font-bold text-text-primary">
-                ${ticker ? parseFloat(ticker.oraclePrice).toLocaleString(undefined, { minimumFractionDigits: 1 }) : '---'}
-              </span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[9px] text-text-tertiary uppercase tracking-tighter">Funding Rate</span>
-              <span className="text-[11px] font-mono font-bold text-accent">
-                {ticker ? (parseFloat(ticker.fundingRate) * 100).toFixed(4) + '%' : '---'}
-              </span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[9px] text-text-tertiary uppercase tracking-tighter">Open Interest</span>
-              <span className="text-[11px] font-mono font-bold text-text-primary">
-                ${ticker ? (parseFloat(ticker.openInterest) * parseFloat(ticker.markPrice) / 1e6).toFixed(1) + 'M' : '---'}
-              </span>
-            </div>
-          </div>
+          <TickerBar symbol={symbol} />
         </div>
         <div className="flex-1 relative bg-black">
-          <TradingChart symbol={symbol} interval={interval} />
+          <AdvancedChart symbol={symbol} />
         </div>
       </div>
 
@@ -244,6 +218,17 @@ export default function TerminalPage() {
                    <option value="Limit">Limit</option>
                    <option value="Stop Market">Stop Market</option>
                  </select>
+              </div>
+              <div>
+                 <label className="text-[10px] text-text-tertiary uppercase tracking-[0.2em] block mb-2">Price (USD)</label>
+                 <input 
+                   type="text" 
+                   value={price}
+                   onChange={e => setPrice(e.target.value)}
+                   placeholder="0.00" 
+                   disabled={orderType === 'Market'}
+                   className={`w-full bg-bg-base border border-border px-3 py-2 rounded-[0px] text-text-primary outline-none font-mono ${orderType === 'Market' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                 />
               </div>
               <div>
                  <label className="text-[10px] text-text-tertiary uppercase tracking-[0.2em] block mb-2">Size (USD)</label>

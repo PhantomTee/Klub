@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useMarketStore } from '../store/marketStore';
 
 interface Trade {
   price: number;
@@ -11,38 +12,40 @@ interface Trade {
 
 export function RecentTrades({ symbol }: { symbol: string }) {
   const [trades, setTrades] = useState<Trade[]>([]);
-  const coin = symbol.split('-')[0];
+  const { wsManager } = useMarketStore();
 
   useEffect(() => {
-    const wsUrl = 'wss://exchange-ws1.bulk.trade';
-    const ws = new WebSocket(wsUrl);
+    // Clear trades on symbol change
+    setTrades([]);
+    
+    const topic = `trades.${symbol}`;
+    wsManager.subscribe(topic, { type: 'trades', symbol });
 
-    ws.onopen = () => {
-      ws.send(JSON.stringify({
-        method: 'subscribe',
-        subscription: [{ type: 'trades', symbol }]
-      }));
-    };
+    const originalOnMessage = wsManager.onMessage;
+    wsManager.onMessage = (msg: any) => {
+      originalOnMessage(msg);
 
-    ws.onmessage = (event) => {
-      try {
-        const msg = JSON.parse(event.data);
-        if (msg.type === 'trades' && msg.data?.trades) {
-          const freshTrades = msg.data.trades.map((t: any) => ({
-            price: parseFloat(t.px),
-            size: parseFloat(t.sz),
-            side: t.side ? 'buy' : 'sell',
-            time: t.time
-          }));
-          setTrades(prev => [...freshTrades, ...prev].slice(0, 50));
-        }
-      } catch (e) {}
+      if (msg.type === 'trades' && msg.data?.trades) {
+        // filter if needed
+        const tradesData = Array.isArray(msg.data.trades) ? msg.data.trades : [msg.data.trades];
+        const currentSymbol = msg.data.symbol || symbol;
+        if (currentSymbol !== symbol) return;
+
+        const freshTrades = tradesData.map((t: any) => ({
+          price: parseFloat(t.px),
+          size: parseFloat(t.sz),
+          side: t.side ? 'buy' : 'sell',
+          time: t.time
+        }));
+        setTrades(prev => [...freshTrades, ...prev].slice(0, 50));
+      }
     };
 
     return () => {
-      ws.close();
+      wsManager.unsubscribe(topic);
+      wsManager.onMessage = originalOnMessage;
     };
-  }, [symbol]);
+  }, [symbol, wsManager]);
 
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-bg-panel">
