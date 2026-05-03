@@ -46,12 +46,10 @@ export default function TickerBar({ symbol, setSymbol, availableMarkets, isFav, 
     };
   }, [symbol, wsManager, setTicker]);
 
-  if (!ticker) return <div className="flex items-center space-x-6 shrink-0 ml-2 animate-pulse"><div className="h-4 w-32 bg-white/5 rounded" /></div>;
-
-  const isPositive = parseFloat(ticker.priceChangePercent) >= 0;
+  const isPositive = ticker ? parseFloat(ticker.priceChangePercent) >= 0 : false;
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full p-4 bg-bg-base border-b border-border">
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full p-4 bg-bg-base border-b border-border min-h-[96px]">
       <div className="flex flex-col mb-4 sm:mb-0">
         <div className="flex items-center gap-2 mb-1">
           <button 
@@ -66,7 +64,7 @@ export default function TickerBar({ symbol, setSymbol, availableMarkets, isFav, 
             className="bg-transparent text-[20px] font-bold text-text-primary outline-none cursor-pointer hover:bg-white/5 appearance-none rounded"
           >
             {availableMarkets.map(m => (
-              <option key={m} value={m} className="bg-bg-panel text-sm">{m}</option>
+              <option key={m} value={m} className="bg-bg-panel text-sm text-text-primary">{m}</option>
             ))}
           </select>
           <div className="flex items-center gap-1 select-none pointer-events-none pr-1 text-text-secondary">
@@ -74,37 +72,41 @@ export default function TickerBar({ symbol, setSymbol, availableMarkets, isFav, 
           </div>
           <span className="text-[10px] bg-white/5 border border-white/10 px-1 py-0.5 rounded text-text-secondary uppercase ml-1">Perp</span>
         </div>
-        <div className="flex items-baseline gap-3">
-          <span className={`text-4xl font-mono font-bold tracking-tight ${isPositive ? 'text-[#22D3A5]' : 'text-[#F0524F]'}`}>
-            {parseFloat(ticker.lastPrice)?.toLocaleString(undefined, { minimumFractionDigits: 2 }) || '---'}
-          </span>
-          <div className={`flex items-center text-[13px] font-mono font-medium ${isPositive ? 'text-[#22D3A5]' : 'text-[#F0524F]'}`}>
-            <span>{isPositive ? '+' : ''}{ticker.priceChange || '0.00'}</span>
-            <span className="ml-1">{isPositive ? '+' : ''}{parseFloat(ticker.priceChangePercent).toFixed(2) || 0}%</span>
+        {ticker ? (
+          <div className="flex items-baseline gap-3">
+            <span className={`text-4xl font-mono font-bold tracking-tight ${isPositive ? 'text-[#22D3A5]' : 'text-[#F0524F]'}`}>
+              {parseFloat(ticker.lastPrice)?.toLocaleString(undefined, { minimumFractionDigits: 2 }) || '---'}
+            </span>
+            <div className={`flex items-center text-[13px] font-mono font-medium ${isPositive ? 'text-[#22D3A5]' : 'text-[#F0524F]'}`}>
+              <span>{isPositive ? '+' : ''}{ticker.priceChange || '0.00'}</span>
+              <span className="ml-1">{isPositive ? '+' : ''}{parseFloat(ticker.priceChangePercent).toFixed(2) || 0}%</span>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="flex items-baseline gap-3 h-10 w-48 animate-pulse bg-white/5 rounded mt-1" />
+        )}
       </div>
       
       <div className="flex flex-wrap items-center gap-6 sm:gap-10">
-        <div className="flex flex-col">
+        <div className="flex flex-col min-w-[70px]">
           <span className="text-[10px] text-text-tertiary mb-1">Oracle Price</span>
           <span className="text-[14px] font-mono font-medium text-text-primary">
-            {parseFloat(ticker.markPrice)?.toLocaleString(undefined, { minimumFractionDigits: 2 }) || '---'}
+            {ticker ? (parseFloat(ticker.markPrice)?.toLocaleString(undefined, { minimumFractionDigits: 2 }) || '---') : '---'}
           </span>
         </div>
-        <div className="flex flex-col">
+        <div className="flex flex-col min-w-[70px]">
           <span className="text-[10px] text-text-tertiary mb-1">24h Volume</span>
           <span className="text-[14px] font-mono font-medium text-text-primary">
-            {parseFloat(ticker.quoteVolume || ticker.volume || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+            {ticker ? parseFloat(ticker.quoteVolume || ticker.volume || 0).toLocaleString(undefined, { maximumFractionDigits: 2 }) : '---'}
           </span>
         </div>
-        <div className="flex flex-col">
+        <div className="flex flex-col min-w-[70px]">
           <span className="text-[10px] text-text-tertiary mb-1">Open Interest</span>
           <span className="text-[14px] font-mono font-medium text-text-primary">
-            {parseFloat(ticker.openInterest)?.toLocaleString(undefined, { maximumFractionDigits: 2 }) || '---'}
+            {ticker ? (parseFloat(ticker.openInterest)?.toLocaleString(undefined, { maximumFractionDigits: 2 }) || '---') : '---'}
           </span>
         </div>
-        <div className="flex flex-col">
+        <div className="flex flex-col min-w-[70px]">
           <span className="text-[10px] text-text-tertiary mb-1">Funding Rate</span>
           <span className="text-[14px] font-mono font-medium text-accent">
             {ticker ? (parseFloat(ticker.fundingRate || '0.0001') * 100).toFixed(4) + '%' : '---'}

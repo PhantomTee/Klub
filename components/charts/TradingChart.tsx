@@ -95,9 +95,11 @@ export function TradingChart({ symbol = 'BTC-USD', interval = '1m' }: { symbol?:
     };
 
     const resizeObserver = new ResizeObserver(entries => {
-      if (entries.length === 0 || entries[0].target !== chartContainerRef.current) return;
-      const newRect = entries[0].contentRect;
-      chart.applyOptions({ height: newRect.height, width: newRect.width });
+      window.requestAnimationFrame(() => {
+        if (entries.length === 0 || entries[0].target !== chartContainerRef.current) return;
+        const newRect = entries[0].contentRect;
+        chart.applyOptions({ height: newRect.height, width: newRect.width });
+      });
     });
 
     resizeObserver.observe(chartContainerRef.current);

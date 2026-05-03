@@ -22,7 +22,7 @@ export default function TerminalPage() {
   const [size, setSize] = useState('');
   const [price, setPrice] = useState('');
   const [leverage, setLeverage] = useState(10);
-  const [executing, setExecuting] = useState(false);
+  const [executing, setExecuting] = useState<false | 'buy' | 'sell'>(false);
   const [activeMobileTab, setActiveMobileTab] = useState<'chart' | 'order' | 'trade'>('chart');
   const [availableMarkets, setAvailableMarkets] = useState<string[]>(['BTC-USD', 'ETH-USD', 'SOL-USD']);
 
@@ -76,7 +76,7 @@ export default function TerminalPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const handleExecute = async () => {
+  const handleExecute = async (executeIsBuy: boolean) => {
     if (!wallet.connected || !wallet.publicKey) {
       alert('Please connect your wallet first');
       return;
@@ -86,7 +86,7 @@ export default function TerminalPage() {
       return;
     }
 
-    setExecuting(true);
+    setExecuting(executeIsBuy ? 'buy' : 'sell');
     try {
       const markPrice = ticker ? parseFloat(ticker.markPrice) : 0;
       if (markPrice === 0) throw new Error('Mark price unavailable');
@@ -94,8 +94,8 @@ export default function TerminalPage() {
       const contractSize = parseFloat(size) / markPrice;
       
       const orderAction = orderType === 'Limit' 
-        ? { l: { c: symbol, b: isBuy, sz: contractSize, px: parseFloat(price), r: false, i: false } }
-        : { m: { c: symbol, b: isBuy, sz: contractSize, r: false, i: false } };
+        ? { l: { c: symbol, b: executeIsBuy, sz: contractSize, px: parseFloat(price), r: false, i: false } }
+        : { m: { c: symbol, b: executeIsBuy, sz: contractSize, r: false, i: false } };
 
       // Direct integration with Bulk Trade Execution API
       const res = await fetch('/api/execute', {
@@ -125,32 +125,12 @@ export default function TerminalPage() {
   const isFav = favorites.includes(symbol);
 
   return (
-    <div className="flex flex-col gap-4 pb-20 md:pb-0 h-[calc(100dvh-64px)] md:h-[calc(100vh-64px)]">
-      {/* Quick Select Favorites Bar */}
-      <div className="flex items-center space-x-2 shrink-0">
-        <span className="text-[9px] font-mono text-[#544A4C] uppercase tracking-[0.2em] mr-4">Favorites:</span>
-        <div className="flex space-x-2">
-          {favorites.map(fav => (
-            <button
-              key={fav}
-              onClick={() => setSymbol(fav)}
-              className={`px-4 py-1.5 text-[10px] font-mono uppercase tracking-widest border transition-all ${
-                symbol === fav 
-                  ? 'bg-accent border-accent text-bg-base font-bold' 
-                  : 'bg-bg-panel border-border text-text-tertiary hover:text-text-primary hover:border-text-secondary'
-              }`}
-            >
-              {fav}
-            </button>
-          ))}
-          {favorites.length === 0 && (
-            <span className="text-[10px] font-mono text-[#2A2620] italic">No favorites starred</span>
-          )}
-        </div>
-      </div>
-
-      {/* Top Half: Chart & Tools */}
-      <div className={`flex-1 min-h-0 bg-bg-panel border border-border flex flex-col rounded-[2px] overflow-hidden ${activeMobileTab !== 'chart' ? 'hidden md:flex' : 'flex'}`}>
+    <div className="flex flex-col h-[calc(100dvh-64px)] md:h-[calc(100vh-64px)] bg-bg-base overflow-hidden">
+      
+      {/* MOBILE DESKTOP HYBRID LAYOUT */}
+      
+      {/* MOBILE TOP BAR (Only visible on mobile) */}
+      <div className="md:hidden">
         <TickerBar 
           symbol={symbol} 
           setSymbol={setSymbol} 
@@ -158,151 +138,240 @@ export default function TerminalPage() {
           isFav={isFav} 
           onToggleFav={handleToggleFav} 
         />
-        <div className="flex-1 relative bg-black">
-          <AdvancedChart symbol={symbol} />
-        </div>
       </div>
 
-      {/* Bottom Half: Order Book, Recent Trades and Order Entry */}
-      <div className={`flex flex-col md:flex-row gap-4 shrink-0 md:h-[280px] overflow-y-auto md:overflow-hidden ${activeMobileTab === 'chart' ? 'hidden md:flex' : 'flex-1 md:flex-none flex'}`}>
-        {/* Order Entry */}
-        <div className={`w-full md:w-[320px] bg-bg-panel border border-border rounded-[2px] flex flex-col p-5 shadow-2xl order-1 md:order-3 relative z-30 shrink-0 ${activeMobileTab !== 'order' ? 'hidden md:flex' : 'flex'}`}>
-          <div className="flex gap-1 mb-5">
-            <button 
-              type="button"
-              onClick={(e) => { e.stopPropagation(); setIsBuy(true); }}
-              className={`flex-1 py-4 font-bold text-[11px] uppercase tracking-[0.2em] rounded-[0px] cursor-pointer transition-all border-none outline-none ${
-                isBuy ? 'bg-success text-bg-base' : 'bg-transparent border border-success/30 text-success hover:bg-success/5'
-              }`}
-            >
-              Buy
-            </button>
-            <button 
-              type="button"
-              onClick={(e) => { e.stopPropagation(); setIsBuy(false); }}
-              className={`flex-1 py-4 font-bold text-[11px] uppercase tracking-[0.2em] rounded-[0px] cursor-pointer transition-all border-none outline-none ${
-                !isBuy ? 'bg-danger text-bg-base' : 'bg-transparent border border-danger/30 text-danger hover:bg-danger/5'
-              }`}
-            >
-              Sell
-            </button>
+      <div className="flex-1 flex flex-col md:flex-row min-h-0">
+        
+        {/* LEFT COLUMN: Ticker (Desktop) + Chart + TradeTabs */}
+        <div className={`flex-1 flex col min-w-0 md:border-r border-border md:flex flex-col ${activeMobileTab === 'chart' ? 'flex' : 'hidden md:flex'}`}>
+          <div className="hidden md:block">
+            <TickerBar 
+              symbol={symbol} 
+              setSymbol={setSymbol} 
+              availableMarkets={availableMarkets} 
+              isFav={isFav} 
+              onToggleFav={handleToggleFav} 
+            />
           </div>
+          <div className="flex-1 relative bg-[#131210]">
+            <AdvancedChart symbol={symbol} />
+          </div>
+          <div className="h-[300px] shrink-0 border-t border-border bg-bg-panel overflow-hidden hidden md:block">
+            <TradeTabs />
+          </div>
+        </div>
 
-          <div className="flex-1 flex flex-col text-[11px] font-mono mt-2 overflow-y-auto no-scrollbar">
-            <div className="space-y-6">
-              <div>
-                 <label className="text-[10px] text-text-tertiary uppercase tracking-[0.2em] block mb-2">Order Type</label>
-                 <select 
-                   value={orderType}
-                   onChange={e => setOrderType(e.target.value)}
-                   className="w-full bg-bg-base border border-border px-3 py-2 rounded-[0px] text-text-primary outline-none appearance-none cursor-pointer"
-                 >
-                   <option value="Market">Market</option>
-                   <option value="Limit">Limit</option>
-                   <option value="Stop Market">Stop Market</option>
-                 </select>
-              </div>
-              <div>
-                 <label className="text-[10px] text-text-tertiary uppercase tracking-[0.2em] block mb-2">Price (USD)</label>
-                 <input 
-                   type="text" 
-                   value={price}
-                   onChange={e => setPrice(e.target.value)}
-                   placeholder="0.00" 
-                   disabled={orderType === 'Market'}
-                   className={`w-full bg-bg-base border border-border px-3 py-2 rounded-[0px] text-text-primary outline-none font-mono ${orderType === 'Market' ? 'opacity-50 cursor-not-allowed' : ''}`}
-                 />
-              </div>
-              <div>
-                 <label className="text-[10px] text-text-tertiary uppercase tracking-[0.2em] block mb-2">Size (USD)</label>
-                 <input 
-                   type="text" 
-                   value={size}
-                   onChange={e => setSize(e.target.value)}
-                   placeholder="0.00" 
-                   className="w-full bg-bg-base border border-border px-3 py-2 rounded-[0px] text-text-primary outline-none font-mono" 
-                 />
-              </div>
-              <div>
-                 <div className="flex justify-between text-[10px] text-text-tertiary uppercase tracking-[0.2em] mb-2">
-                   <span>Leverage</span>
-                   <span className="text-accent font-bold">{leverage}x</span>
-                 </div>
-                 <input 
-                   type="range" 
-                   min="1" 
-                   max="50" 
-                   step="1"
-                   value={leverage}
-                    onChange={e => setLeverage(parseInt(e.target.value))}
-                   className="w-full h-2 bg-border rounded-full appearance-none accent-accent cursor-pointer" 
-                 />
-              </div>
-              
-              {snapshot?.feeTiers?.[0] && (
-                 <div className="flex justify-between items-center text-[9px] text-text-tertiary mb-2 border border-border p-2 bg-black/10">
-                   <div className="flex flex-col">
-                     <span className="uppercase tracking-widest text-[#544A4C]">Tier {(snapshot.feeTiers[0].tierIndex || 0) + 1} Fees</span>
-                     <span>M: {snapshot.feeTiers[0].makerBps}bps / T: {snapshot.feeTiers[0].takerBps}bps</span>
-                   </div>
-                   <div className="flex flex-col text-right">
-                     <span className="uppercase tracking-widest text-[#544A4C]">14d Vol</span>
-                     <span className="text-accent">${((snapshot.feeTiers[0].rollingVolume || 0) / 1e6).toFixed(1)}M</span>
-                   </div>
-                 </div>
-              )}
-            </div>
-
-            <div className="pt-4 border-t border-border mt-auto shrink-0">
-              <button 
-                type="button"
-                onClick={handleExecute}
-                disabled={executing || !wallet.connected}
-                className={`w-full py-4 font-bold text-[11px] uppercase tracking-[0.3em] rounded-[0px] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center ${
-                  isBuy 
-                    ? 'bg-success text-bg-base hover:bg-success/90' 
-                    : 'bg-danger text-bg-base hover:bg-danger/90'
-                }`}
-              >
-                {executing ? <Loader2 className="animate-spin" size={16} /> : `Execute ${isBuy ? 'Buy' : 'Sell'}`}
-              </button>
+        {/* MOBILE ORDER VIEW (Orderbook + Form side-by-side) */}
+        <div className={`flex-1 flex min-h-0 md:hidden ${activeMobileTab === 'order' ? 'flex' : 'hidden'}`}>
+          <div className="w-1/2 flex flex-col border-r border-border relative">
+             <div className="absolute top-0 w-full h-full">
+               <OrderBook symbol={symbol} />
+             </div>
+          </div>
+          <div className="w-1/2 flex flex-col overflow-y-auto bg-bg-panel">
+            {/* Mobile Order Form */}
+            <OrderFormContent 
+              symbol={symbol} isBuy={isBuy} setIsBuy={setIsBuy} 
+              orderType={orderType} setOrderType={setOrderType}
+              price={price} setPrice={setPrice} size={size} setSize={setSize}
+              leverage={leverage} setLeverage={setLeverage} executing={executing}
+              wallet={wallet} handleExecute={handleExecute} snapshot={snapshot}
+            />
+            {/* Mobile Positions */}
+            <div className="mt-4 border-t border-border">
+              <TradeTabs />
             </div>
           </div>
         </div>
 
-        {/* Order Book */}
-        <div className={`flex-1 min-h-[400px] md:min-h-0 bg-bg-panel border border-border rounded-[2px] flex flex-col overflow-hidden order-2 md:order-1 ${activeMobileTab === 'chart' ? 'hidden md:flex' : 'flex'}`}>
-          <div className="p-3 border-b border-border text-[10px] text-text-tertiary font-mono tracking-[0.2em] uppercase bg-bg-base">Order Book</div>
-          <OrderBook symbol={symbol} />
+        {/* MIDDLE COLUMN: Order Book / Trades (Desktop Only) */}
+        <div className="hidden md:flex w-[320px] lg:w-[350px] flex-col shrink-0 border-r border-border bg-bg-panel">
+          <div className="flex h-12 border-b border-border text-[11px] font-bold text-text-tertiary">
+            <button className="flex-1 h-full hover:text-text-primary transition-colors flex justify-center items-center relative text-accent">
+              Order Book
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />
+            </button>
+            <button className="flex-1 h-full hover:text-text-primary transition-colors flex justify-center items-center">
+              Trades
+            </button>
+          </div>
+          <div className="flex-1 min-h-0 relative">
+             <div className="absolute inset-0">
+               <OrderBook symbol={symbol} />
+             </div>
+          </div>
         </div>
 
-        {/* Recent Trades (Tape) */}
-        <div className={`flex-1 min-h-[400px] md:min-h-0 bg-bg-panel border border-border rounded-[2px] flex flex-col overflow-hidden order-3 md:order-2 ${activeMobileTab === 'chart' ? 'hidden md:flex' : 'flex'}`}>
-          <div className="p-3 border-b border-border text-[10px] text-text-tertiary font-mono tracking-[0.2em] uppercase bg-bg-base">Recent Trades</div>
-          <RecentTrades symbol={symbol} />
+        {/* RIGHT COLUMN: Order Entry & Account (Desktop Only) */}
+        <div className="hidden md:flex w-[320px] flex-col shrink-0 bg-bg-panel overflow-y-auto no-scrollbar">
+          <OrderFormContent 
+              symbol={symbol} isBuy={isBuy} setIsBuy={setIsBuy} 
+              orderType={orderType} setOrderType={setOrderType}
+              price={price} setPrice={setPrice} size={size} setSize={setSize}
+              leverage={leverage} setLeverage={setLeverage} executing={executing}
+              wallet={wallet} handleExecute={handleExecute} snapshot={snapshot}
+          />
         </div>
-      </div>
 
-      {/* Trade Tabs: Positions & Orders */}
-      <div className={`shrink-0 ${activeMobileTab === 'chart' ? 'hidden md:block' : 'block'}`}>
-        <TradeTabs />
       </div>
 
       {/* Mobile Tab Bar */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 h-[64px] bg-bg-panel border-t border-border flex items-center justify-around px-4 z-50">
+      <div className="md:hidden h-[64px] bg-bg-panel border-t border-border flex items-center justify-around px-4 shrink-0">
         <button 
           onClick={() => setActiveMobileTab('order')}
-          className={`flex-1 flex items-center justify-center h-full transition-all ${activeMobileTab === 'order' ? 'text-accent border-t-2 border-accent' : 'text-text-tertiary'}`}
+          className={`flex-1 flex flex-col items-center justify-center h-full transition-all ${activeMobileTab === 'order' ? 'text-text-primary' : 'text-text-tertiary'}`}
         >
-          <div className="text-[10px] uppercase font-bold tracking-[0.2em]">Order</div>
+          <div className={`text-[12px] font-bold tracking-widest px-8 py-2 rounded ${activeMobileTab === 'order' ? 'bg-[#2A2620]' : ''}`}>Order</div>
         </button>
-        <div className="w-[1px] h-8 bg-border" />
         <button 
           onClick={() => setActiveMobileTab('chart')}
-          className={`flex-1 flex items-center justify-center h-full transition-all ${activeMobileTab === 'chart' ? 'text-accent border-t-2 border-accent' : 'text-text-tertiary'}`}
+          className={`flex-1 flex flex-col items-center justify-center h-full transition-all ${activeMobileTab === 'chart' ? 'text-text-primary' : 'text-text-tertiary'}`}
         >
-          <div className="text-[10px] uppercase font-bold tracking-[0.2em]">Charts</div>
+          <div className={`text-[12px] font-bold tracking-widest px-8 py-2 rounded ${activeMobileTab === 'chart' ? 'bg-[#2A2620]' : ''}`}>Charts</div>
         </button>
+      </div>
+    </div>
+  );
+}
+
+function OrderFormContent({ 
+  symbol, isBuy, setIsBuy, orderType, setOrderType, 
+  price, setPrice, size, setSize, leverage, setLeverage, 
+  executing, wallet, handleExecute, snapshot 
+}: any) {
+  return (
+    <div className="flex flex-col p-4 space-y-4">
+      {/* Margin / Leverage Selector */}
+      <div className="flex gap-2">
+        <button className="flex-1 py-1.5 bg-[#2A2620] text-text-primary font-mono text-[11px] rounded-[2px]">Cross</button>
+        <button className="flex-1 py-1.5 bg-[#2A2620] text-text-primary font-mono text-[11px] rounded-[2px]">{leverage}x</button>
+        <button className="w-10 py-1.5 bg-[#2A2620] text-text-primary font-mono text-[11px] rounded-[2px] cursor-not-allowed opacity-50">PM</button>
+      </div>
+
+      {/* Order Type Tabs */}
+      <div className="flex gap-4 text-[12px] font-bold text-text-tertiary border-b border-border pb-2">
+        <button onClick={() => setOrderType('Market')} className={`hover:text-text-primary transition-colors ${orderType === 'Market' ? 'text-accent' : ''}`}>Market</button>
+        <button onClick={() => setOrderType('Limit')} className={`hover:text-text-primary transition-colors ${orderType === 'Limit' ? 'text-accent' : ''}`}>Limit</button>
+        <div className="flex gap-1 items-center hover:text-text-primary cursor-pointer text-text-tertiary ml-auto">
+          <span>Pro</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+      </div>
+
+      <div className="space-y-4 text-[11px] font-mono mt-2">
+        <div>
+           <div className="flex justify-between mb-1">
+             <label className="text-text-tertiary">Price</label>
+             <span className="text-text-tertiary">Available 0.00</span>
+           </div>
+           <div className="relative">
+             <input 
+               type="text" 
+               value={price}
+               onChange={e => setPrice(e.target.value)}
+               placeholder="0.00" 
+               disabled={orderType === 'Market'}
+               className={`w-full bg-transparent border-b border-border py-2 text-text-primary outline-none focus:border-text-secondary transition-colors ${orderType === 'Market' ? 'opacity-50 cursor-not-allowed text-text-tertiary' : ''}`}
+             />
+           </div>
+        </div>
+
+        <div>
+           <label className="text-text-tertiary block mb-1">Size</label>
+           <div className="relative flex items-center">
+             <input 
+               type="text" 
+               value={size}
+               onChange={e => setSize(e.target.value)}
+               placeholder="0.00" 
+               className="w-full bg-transparent border-b border-border py-2 text-text-primary outline-none focus:border-text-secondary transition-colors" 
+             />
+             <span className="absolute right-0 text-text-tertiary border-b border-border h-full flex items-center pr-2">USD</span>
+           </div>
+        </div>
+
+        <div>
+           <input 
+             type="range" 
+             min="1" 
+             max="50" 
+             step="1"
+             value={leverage}
+             onChange={e => setLeverage(parseInt(e.target.value))}
+             className="w-full h-1 bg-[#2A2620] rounded-full appearance-none outline-none mt-4 mb-2" 
+           />
+        </div>
+
+        <div className="space-y-2 mt-4 text-[11px] font-sans text-text-secondary">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" className="accent-accent bg-transparent border-border" />
+            <span>Reduce Only</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" className="accent-accent bg-transparent border-border" />
+            <span>TP/SL</span>
+          </label>
+        </div>
+      </div>
+
+      <div className="flex gap-2 mt-4 pt-4">
+        <button 
+          onClick={() => { setIsBuy(true); handleExecute(true); }}
+          disabled={executing !== false || !wallet.connected}
+          className={`flex-1 py-3 font-bold text-[12px] rounded-[2px] transition-all disabled:opacity-50 flex items-center justify-center bg-success text-bg-base hover:bg-success/90`}
+        >
+          {executing === 'buy' ? <Loader2 className="animate-spin mr-2" size={14} /> : `Buy / Long`}
+        </button>
+        <button 
+          onClick={() => { setIsBuy(false); handleExecute(false); }}
+          disabled={executing !== false || !wallet.connected}
+          className={`flex-1 py-3 font-bold text-[12px] rounded-[2px] transition-all disabled:opacity-50 flex items-center justify-center bg-danger text-bg-base hover:bg-danger/90`}
+        >
+          {executing === 'sell' ? <Loader2 className="animate-spin mr-2" size={14} /> : `Sell / Short`}
+        </button>
+      </div>
+
+      {/* Account / Order Summary Info */}
+      <div className="mt-8 space-y-2 text-[10px] font-mono text-text-tertiary border-t border-border pt-4">
+        <div className="flex justify-between items-center mb-4 pb-2 border-b border-border/50">
+          <span className="font-sans">Current Position</span>
+          <span className="text-text-primary">0.00 {symbol.split('-')[0]}</span>
+        </div>
+        <div className="flex justify-between">
+          <span>Liq. Price</span>
+          <span className="text-[#544A4C]">- / -</span>
+        </div>
+        <div className="flex justify-between">
+          <span>Order Value</span>
+          <span className="text-text-primary">$0.00</span>
+        </div>
+        <div className="flex justify-between">
+          <span>Margin Required</span>
+          <div className="text-text-primary">
+            <span className="text-success">$0.00</span> / <span className="text-danger">$0.00</span>
+          </div>
+        </div>
+        <div className="flex justify-between">
+          <span>Fees</span>
+          <span className="text-[#544A4C]">- / -</span>
+        </div>
+      </div>
+
+      {/* Account Actions */}
+      <div className="mt-8 pt-4 border-t border-border">
+        <div className="flex items-center justify-between font-bold text-[12px] mb-4 font-sans text-text-primary">Account</div>
+        <div className="flex gap-2">
+           <button className="flex-1 py-1.5 border border-border text-text-primary text-[11px] font-mono hover:bg-white/5 rounded-[2px]">Claim USDC</button>
+           <button className="flex-1 py-1.5 border border-border text-text-primary text-[11px] font-mono hover:bg-white/5 rounded-[2px]">Transfer</button>
+        </div>
+        <div className="mt-4 space-y-1.5 text-[10px] font-mono text-text-tertiary">
+          <div className="flex justify-between"><span>Portfolio Margin</span><span className="text-text-primary"></span></div>
+          <div className="flex justify-between"><span>Total Equity</span><span className="text-text-primary">$0.00</span></div>
+          <div className="flex justify-between"><span>Unrealized PnL</span><span className="text-success">$0.00</span></div>
+          <div className="flex justify-between"><span>Portfolio MMR</span><span className="text-success">0.00%</span></div>
+          <div className="flex justify-between"><span>Maintenance Margin</span><span className="text-text-primary">$0.00</span></div>
+          <div className="flex justify-between"><span>Portfolio APY</span><span className="text-text-primary">coming soon</span></div>
+        </div>
       </div>
     </div>
   );

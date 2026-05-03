@@ -86,8 +86,14 @@ export default function AdvancedChart({ symbol = 'BTC-USD' }: { symbol: string }
       if (originalOnMessage) originalOnMessage(msg);
     };
 
-    const handleResize = () => chart.applyOptions({ width: chartContainerRef.current?.clientWidth, height: chartContainerRef.current?.clientHeight });
-    const resizeObserver = new ResizeObserver(() => handleResize());
+    const handleResize = () => {
+      window.requestAnimationFrame(() => {
+        if (chartContainerRef.current) {
+          chart.applyOptions({ width: chartContainerRef.current.clientWidth, height: chartContainerRef.current.clientHeight });
+        }
+      });
+    };
+    const resizeObserver = new ResizeObserver(handleResize);
     resizeObserver.observe(chartContainerRef.current);
 
     return () => {

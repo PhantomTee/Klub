@@ -1,0 +1,89 @@
+/* Chart wrapper background */
+.chart-container,
+.chart-container-border { background: #07070D !important; }
+
+/* Top header bar */
+.header-chart-panel,
+.chart-toolbar { 
+  background: #0F0F1A !important; 
+  border-bottom: 1px solid #2A2A42 !important;
+}
+
+/* Left drawing toolbar */
+.left-toolbar {
+  background: #0F0F1A !important;
+  border-right: 1px solid #1A1A2E !important;
+}
+
+/* Drawing tool buttons */
+.left-toolbar button,
+.floating-toolbar-react-widgets__button {
+  color: #8888AA !important;
+}
+.left-toolbar button:hover,
+.left-toolbar button.selected {
+  background: #1E1E32 !important;
+  color: #EEEEFF !important;
+}
+
+/* Active/selected tool highlight */
+.left-toolbar button.selected {
+  border-left: 2px solid #7B5CF0 !important;
+}
+
+/* Price scale */
+.price-axis { 
+  background: #07070D !important; 
+  color: #8888AA !important;
+  border-left: 1px solid #1A1A2E !important;
+}
+
+/* Time scale */
+.time-axis { background: #07070D !important; color: #8888AA !important; }
+
+/* Tooltip / legend */
+.chart-legend { 
+  background: rgba(15,15,26,0.9) !important; 
+  color: #EEEEFF !important;
+  font-family: 'Space Mono', monospace !important;
+}
+
+/* Study/indicator dialogs */
+.study-dialog {
+  background: #0F0F1A !important;
+  border: 1px solid #2A2A42 !important;
+  color: #EEEEFF !important;
+}
+
+/* Context menu */
+.context-menu {
+  background: #16162A !important;
+  border: 1px solid #2A2A42 !important;
+  color: #EEEEFF !important;
+}
+.context-menu .context-menu__item:hover {
+  background: #1E1E32 !important;
+}
+
+/* Buttons inside chart */
+.chart-toolbar .button,
+.button-merBkM5y {
+  background: transparent !important;
+  color: #8888AA !important;
+  border: 1px solid #2A2A42 !important;
+}
+.chart-toolbar .button:hover { 
+  background: #1E1E32 !important; 
+  color: #EEEEFF !important;
+}
+.chart-toolbar .button.isActive-merBkM5y {
+  background: rgba(123,92,240,0.15) !important;
+  color: #7B5CF0 !important;
+  border-color: #7B5CF0 !important;
+}
+
+/* Order lines */
+.price-line-label { 
+  font-family: 'Space Mono', monospace !important;
+  font-size: 11px !important;
+}
