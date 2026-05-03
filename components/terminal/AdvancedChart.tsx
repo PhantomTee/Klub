@@ -100,6 +100,12 @@ export default function AdvancedChart({ symbol = 'BTC-USD' }: { symbol: string }
 
   return (
     <div className="flex flex-col w-full h-full relative">
+      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[5] opacity-[0.03] text-[10vw] font-bold pointer-events-none select-none text-white whitespace-nowrap">
+        {symbol.replace('-', ' / ')}
+      </div>
+      <div className="absolute top-14 left-4 z-10 opacity-80 text-[20px] font-medium pointer-events-none select-none text-white/50 tracking-wide">
+        {symbol.replace('-', ' / ')} • {timeframe}
+      </div>
       <div className="flex gap-2 p-2 px-4 shadow-sm z-10 absolute top-0 left-0">
         {/* Timeframes */}
         {['10s', '1m', '5m', '15m', '1h', '4h', '1d'].map(tf => (

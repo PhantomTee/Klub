@@ -151,30 +151,13 @@ export default function TerminalPage() {
 
       {/* Top Half: Chart & Tools */}
       <div className={`flex-1 min-h-0 bg-bg-panel border border-border flex flex-col rounded-[2px] overflow-hidden ${activeMobileTab !== 'chart' ? 'hidden md:flex' : 'flex'}`}>
-        <div className="h-[48px] flex items-center px-4 border-b border-border gap-4 shrink-0 bg-bg-base overflow-x-auto no-scrollbar">
-          <div className="flex items-center space-x-3 shrink-0">
-            <select 
-              value={symbol} 
-              onChange={e => setSymbol(e.target.value)}
-              className="bg-transparent text-[11px] font-bold font-mono tracking-[0.2em] outline-none text-text-primary uppercase cursor-pointer"
-            >
-              {availableMarkets.map(m => (
-                <option key={m} value={m}>{m}</option>
-              ))}
-            </select>
-            <button 
-              onClick={handleToggleFav}
-              className={`p-1 transition-colors ${isFav ? 'text-accent' : 'text-border hover:text-text-tertiary'}`}
-            >
-              <Star size={14} fill={isFav ? "currentColor" : "none"} />
-            </button>
-          </div>
-
-          <div className="w-[1px] h-4 bg-border shrink-0 hidden md:block ml-2" />
-
-          {/* Market Stats Bar */}
-          <TickerBar symbol={symbol} />
-        </div>
+        <TickerBar 
+          symbol={symbol} 
+          setSymbol={setSymbol} 
+          availableMarkets={availableMarkets} 
+          isFav={isFav} 
+          onToggleFav={handleToggleFav} 
+        />
         <div className="flex-1 relative bg-black">
           <AdvancedChart symbol={symbol} />
         </div>

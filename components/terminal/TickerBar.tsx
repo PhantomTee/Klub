@@ -1,8 +1,17 @@
 'use client';
 import { useEffect } from 'react';
 import { useMarketStore } from '../../store/marketStore';
+import { Star } from 'lucide-react';
 
-export default function TickerBar({ symbol }: { symbol: string }) {
+interface TickerBarProps {
+  symbol: string;
+  setSymbol: (s: string) => void;
+  availableMarkets: string[];
+  isFav: boolean;
+  onToggleFav: (e: React.MouseEvent) => void;
+}
+
+export default function TickerBar({ symbol, setSymbol, availableMarkets, isFav, onToggleFav }: TickerBarProps) {
   const ticker = useMarketStore(state => state.ticker);
   const { wsManager, setTicker } = useMarketStore();
 
@@ -42,36 +51,65 @@ export default function TickerBar({ symbol }: { symbol: string }) {
   const isPositive = parseFloat(ticker.priceChangePercent) >= 0;
 
   return (
-    <div className="flex items-center gap-6 shrink-0 ml-2">
-      <div className="flex flex-col">
-        <span className="text-[9px] text-text-tertiary uppercase tracking-tighter">Last Price</span>
-        <span className={`text-[11px] font-mono font-bold ${isPositive ? 'text-[#22D3A5]' : 'text-[#F0524F]'}`}>
-          ${parseFloat(ticker.lastPrice)?.toLocaleString(undefined, { minimumFractionDigits: 2 }) || '---'}
-        </span>
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full p-4 bg-bg-base border-b border-border">
+      <div className="flex flex-col mb-4 sm:mb-0">
+        <div className="flex items-center gap-2 mb-1">
+          <button 
+            onClick={onToggleFav}
+            className={`p-1 transition-colors ${isFav ? 'text-accent' : 'text-border hover:text-text-tertiary'}`}
+          >
+            <Star size={16} fill={isFav ? "currentColor" : "none"} />
+          </button>
+          <select 
+            value={symbol} 
+            onChange={e => setSymbol(e.target.value)}
+            className="bg-transparent text-[20px] font-bold text-text-primary outline-none cursor-pointer hover:bg-white/5 appearance-none rounded"
+          >
+            {availableMarkets.map(m => (
+              <option key={m} value={m} className="bg-bg-panel text-sm">{m}</option>
+            ))}
+          </select>
+          <div className="flex items-center gap-1 select-none pointer-events-none pr-1 text-text-secondary">
+             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 9 6 6 6-6"/></svg>
+          </div>
+          <span className="text-[10px] bg-white/5 border border-white/10 px-1 py-0.5 rounded text-text-secondary uppercase ml-1">Perp</span>
+        </div>
+        <div className="flex items-baseline gap-3">
+          <span className={`text-4xl font-mono font-bold tracking-tight ${isPositive ? 'text-[#22D3A5]' : 'text-[#F0524F]'}`}>
+            {parseFloat(ticker.lastPrice)?.toLocaleString(undefined, { minimumFractionDigits: 2 }) || '---'}
+          </span>
+          <div className={`flex items-center text-[13px] font-mono font-medium ${isPositive ? 'text-[#22D3A5]' : 'text-[#F0524F]'}`}>
+            <span>{isPositive ? '+' : ''}{ticker.priceChange || '0.00'}</span>
+            <span className="ml-1">{isPositive ? '+' : ''}{parseFloat(ticker.priceChangePercent).toFixed(2) || 0}%</span>
+          </div>
+        </div>
       </div>
-      <div className="flex flex-col">
-        <span className="text-[9px] text-text-tertiary uppercase tracking-tighter">24h Change</span>
-        <span className={`text-[11px] font-mono font-bold ${isPositive ? 'text-[#22D3A5]' : 'text-[#F0524F]'}`}>
-          {isPositive ? '+' : ''}{parseFloat(ticker.priceChangePercent).toFixed(2) || 0}%
-        </span>
-      </div>
-      <div className="flex flex-col hidden sm:flex">
-        <span className="text-[9px] text-text-tertiary uppercase tracking-tighter">Mark Price</span>
-        <span className="text-[11px] font-mono font-bold text-text-primary">
-          ${parseFloat(ticker.markPrice)?.toFixed(2) || '---'}
-        </span>
-      </div>
-      <div className="flex flex-col">
-        <span className="text-[9px] text-text-tertiary uppercase tracking-tighter">24h Vol</span>
-        <span className="text-[11px] font-mono font-bold text-text-primary">
-          ${((parseFloat(ticker.quoteVolume || ticker.volume || 0)) / 1e6).toFixed(1)}M
-        </span>
-      </div>
-      <div className="flex flex-col hidden lg:flex">
-        <span className="text-[9px] text-text-tertiary uppercase tracking-tighter">Open Interest</span>
-        <span className="text-[11px] font-mono font-bold text-text-primary">
-          ${(parseFloat(ticker.openInterest) * parseFloat(ticker.markPrice) / 1e6).toFixed(1)}M
-        </span>
+      
+      <div className="flex flex-wrap items-center gap-6 sm:gap-10">
+        <div className="flex flex-col">
+          <span className="text-[10px] text-text-tertiary mb-1">Oracle Price</span>
+          <span className="text-[14px] font-mono font-medium text-text-primary">
+            {parseFloat(ticker.markPrice)?.toLocaleString(undefined, { minimumFractionDigits: 2 }) || '---'}
+          </span>
+        </div>
+        <div className="flex flex-col">
+          <span className="text-[10px] text-text-tertiary mb-1">24h Volume</span>
+          <span className="text-[14px] font-mono font-medium text-text-primary">
+            {parseFloat(ticker.quoteVolume || ticker.volume || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+          </span>
+        </div>
+        <div className="flex flex-col">
+          <span className="text-[10px] text-text-tertiary mb-1">Open Interest</span>
+          <span className="text-[14px] font-mono font-medium text-text-primary">
+            {parseFloat(ticker.openInterest)?.toLocaleString(undefined, { maximumFractionDigits: 2 }) || '---'}
+          </span>
+        </div>
+        <div className="flex flex-col">
+          <span className="text-[10px] text-text-tertiary mb-1">Funding Rate</span>
+          <span className="text-[14px] font-mono font-medium text-accent">
+            {ticker ? (parseFloat(ticker.fundingRate || '0.0001') * 100).toFixed(4) + '%' : '---'}
+          </span>
+        </div>
       </div>
     </div>
   );

@@ -61,7 +61,7 @@ export async function POST(req: Request) {
       : 'https://llm-gateway.heurist.xyz/v1/chat/completions'; // Assumed heurist endpoint
       
     const apiKey = openRouterKey || heuristKey;
-    const model = openRouterKey ? 'anthropic/claude-3.5-sonnet' : 'meta-llama/llama-3-70b-instruct'; // Default fallback
+    const model = openRouterKey ? 'anthropic/claude-3.5-sonnet:beta' : 'meta-llama/llama-3-70b-instruct'; // Default fallback
 
     const response = await fetch(baseURL, {
       method: 'POST',
