@@ -2,12 +2,14 @@
 
 import React, { useEffect, useRef } from 'react';
 import { createChart, ColorType, IChartApi, ISeriesApi, UTCTimestamp, CandlestickSeries } from 'lightweight-charts';
+import { useUIStore } from '../../store/uiStore';
 
 export function TradingChart({ symbol = 'BTC-USD', interval = '1m' }: { symbol?: string, interval?: string }) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const dataSetRef = useRef(false);
+  const { environment } = useUIStore();
 
   useEffect(() => {
     if (!chartContainerRef.current) return;
@@ -38,7 +40,7 @@ export function TradingChart({ symbol = 'BTC-USD', interval = '1m' }: { symbol?:
     seriesRef.current = series;
     dataSetRef.current = false;
 
-    const wsUrl = 'wss://exchange-ws1.bulk.trade';
+    const wsUrl = environment === 'testnet' ? 'wss://testnet-ws1.bulk.trade' : 'wss://exchange-ws1.bulk.trade';
     const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
@@ -111,7 +113,7 @@ export function TradingChart({ symbol = 'BTC-USD', interval = '1m' }: { symbol?:
       chartRef.current = null;
       seriesRef.current = null;
     };
-  }, [symbol, interval]);
+  }, [symbol, interval, environment]);
 
   return (
     <div className="relative w-full h-full min-h-0">

@@ -14,21 +14,20 @@ export async function submitOrder({
   actions,
   account,
   signer,
-  signerSecretKey
+  signerSecretKey,
+  environment = 'mainnet'
 }: {
   actions: any[],
   account: string,
   signer: string,
-  signerSecretKey: Uint8Array
+  signerSecretKey: Uint8Array,
+  environment?: 'mainnet' | 'testnet'
 }) {
   await ensureInit();
   
   const signerWasm = WasmSigner.fromBase58(bs58.encode(signerSecretKey));
-  const nonce = Date.now() * 1000; // microseconds usually enough for nonce manager or manual
+  const nonce = Date.now() * 1000;
   
-  // Prepare full transaction payload using the WASM signer
-  // Based on the WASM structure: signEntries or sign
-  // Often 'signOrder' or 'signGroup' for multiple.
   const response = signerWasm.signGroup(actions, nonce);
   
   const body = {
@@ -42,7 +41,10 @@ export async function submitOrder({
     }
   };
 
-  const exchangeUrl = process.env.NEXT_PUBLIC_BULK_HTTP || 'https://exchange-api.bulk.trade/api/v1';
+  const exchangeUrl = environment === 'testnet' 
+    ? 'https://testnet-api.bulk.trade/api/v1' 
+    : 'https://exchange-api.bulk.trade/api/v1';
+  
   const res = await fetch(`${exchangeUrl}/order`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

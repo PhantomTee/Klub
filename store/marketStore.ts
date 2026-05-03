@@ -13,6 +13,7 @@ interface MarketState {
   asks: Map<number, number>;
   selectedPrice: string;
   wsManager: BulkWebSocket;
+  reconnect: () => void;
   setTicker: (ticker: any) => void;
   setSelectedPrice: (price: string) => void;
   processL2Delta: (bookData: any) => void;
@@ -36,6 +37,10 @@ export const useMarketStore = create<MarketState>((set, get) => {
     asks: new Map(),
     selectedPrice: '',
     wsManager,
+
+    reconnect: () => {
+      wsManager.reconnect();
+    },
 
     setTicker: (ticker) => set({ ticker }),
     setSelectedPrice: (price) => set({ selectedPrice: price }),

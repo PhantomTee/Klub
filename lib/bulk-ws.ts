@@ -1,17 +1,27 @@
+import { useUIStore } from '../store/uiStore';
+
 export class BulkWebSocket {
   private ws: WebSocket | null = null;
-  private url = 'wss://exchange-ws1.bulk.trade';
   private subs = new Map<string, any>();
   private reconnectDelay = 1000;
   private isConnected = false;
 
+  private get url() {
+    return useUIStore.getState().environment === 'testnet'
+      ? 'wss://testnet-ws1.bulk.trade'
+      : 'wss://exchange-ws1.bulk.trade';
+  }
+
   constructor(public onMessage: (msg: any) => void) {}
 
   connect() {
+    if (this.ws) {
+      this.ws.close();
+    }
     this.ws = new WebSocket(this.url);
 
     this.ws.onopen = () => {
-      console.log('Bulk WS Connected');
+      console.log('Bulk WS Connected to ' + this.url);
       this.isConnected = true;
       this.reconnectDelay = 1000;
       this.resubscribeAll();
@@ -30,9 +40,16 @@ export class BulkWebSocket {
       setTimeout(() => this.connect(), this.reconnectDelay);
       this.reconnectDelay = Math.min(this.reconnectDelay * 2, 30000);
     };
+  }
 
-    // Note: If using Node.js, handle 'ping' event directly. 
-    // In browsers, the browser automatically responds with 'pong'.
+  reconnect() {
+    if (this.ws) {
+      // Temporarily remove onclose so it doesn't trigger auto-reconnect logic and wait explicitly
+      this.ws.onclose = null; 
+      this.ws.close();
+    }
+    this.isConnected = false;
+    this.connect();
   }
 
   subscribe(topic: string, subPayload: any) {

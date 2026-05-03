@@ -6,6 +6,8 @@ import { X, Trash2, ArrowUpRight, ArrowDownRight, Loader2, Calculator } from 'lu
 
 import { usePortfolioStore } from '../store/portfolioStore';
 
+import { useUIStore } from '../store/uiStore';
+
 const LiquidationWarningBar = ({ pos }: { pos: any }) => {
   const totalRange = Math.abs(pos.price - pos.liquidationPrice);
   if (totalRange <= 0) return null;
@@ -125,6 +127,7 @@ export function TradeTabs() {
   const wallet = useWallet();
   const { connected } = wallet;
   const { snapshot } = usePortfolioStore();
+  const { environment } = useUIStore();
 
   const handleClosePosition = async (pos: any) => {
     if (!wallet.publicKey) return;
@@ -136,6 +139,7 @@ export function TradeTabs() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           account: wallet.publicKey.toBase58(),
+          environment,
           actions: [{
             m: {
               c: pos.symbol,
@@ -166,6 +170,7 @@ export function TradeTabs() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           account: wallet.publicKey.toBase58(),
+          environment,
           actions: [{
             cx: {
               c: order.symbol,

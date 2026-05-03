@@ -4,7 +4,7 @@ import bs58 from 'bs58';
 
 export async function POST(req: Request) {
   try {
-    const { actions, account } = await req.json();
+    const { actions, account, environment } = await req.json();
     
     if (!actions || !account) {
       return NextResponse.json({ error: 'Missing actions or account' }, { status: 400 });
@@ -34,6 +34,7 @@ export async function POST(req: Request) {
       account,
       signer: pubKeyStr,
       signerSecretKey: secretKeyArray,
+      environment
     });
 
     return NextResponse.json(data);

@@ -26,10 +26,14 @@ export default function TerminalPage() {
   const [activeMobileTab, setActiveMobileTab] = useState<'chart' | 'order' | 'trade'>('chart');
   const [availableMarkets, setAvailableMarkets] = useState<string[]>(['BTC-USD', 'ETH-USD', 'SOL-USD']);
 
-  const { favorites, toggleFavorite } = useUIStore();
+  const { favorites, toggleFavorite, environment } = useUIStore();
   const { snapshot } = usePortfolioStore();
   const wallet = useWallet();
-  const { ticker, selectedPrice } = useMarketStore();
+  const { ticker, selectedPrice, reconnect } = useMarketStore();
+
+  useEffect(() => {
+    reconnect();
+  }, [environment, reconnect]);
 
   useEffect(() => {
     if (selectedPrice && orderType === 'Limit') {
@@ -48,18 +52,18 @@ export default function TerminalPage() {
       try {
         const { fetchExchangeInfo } = await import('../../lib/bulk-client');
         const res = await fetchExchangeInfo();
-        // Adjust for potential wrapping object or array
         const markets = Array.isArray(res) ? res : res.markets || res.universe || [];
-        const symbols = markets.map((m: any) => m.name || m.symbol || m.coin).filter(Boolean);
-        if (symbols.length > 0) {
-          setAvailableMarkets(symbols);
+        const symbolsList = markets.map((m: any) => m.name || m.symbol || m.coin).filter(Boolean);
+        if (symbolsList.length > 0) {
+          setAvailableMarkets(symbolsList);
+          setSymbol(prevParam => !symbolsList.includes(prevParam) ? symbolsList[0] : prevParam);
         }
       } catch (e) {
         console.error('Failed to load market symbols', e);
       }
     }
     loadSymbols();
-  }, []);
+  }, [environment]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -103,7 +107,8 @@ export default function TerminalPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           account: wallet.publicKey.toBase58(),
-          actions: [orderAction]
+          actions: [orderAction],
+          environment: useUIStore.getState().environment
         })
       });
       const data = await res.json();
@@ -154,7 +159,7 @@ export default function TerminalPage() {
             />
           </div>
           <div className="flex-1 relative bg-[#131210]">
-            <AdvancedChart symbol={symbol} />
+            <AdvancedChart key={environment} symbol={symbol} />
           </div>
           <div className="h-[300px] shrink-0 border-t border-border bg-bg-panel overflow-hidden hidden md:block">
             <TradeTabs />

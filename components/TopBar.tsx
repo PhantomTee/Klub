@@ -8,7 +8,7 @@ import { ThemeToggle } from './ThemeToggle';
 
 export function TopBar() {
   const { snapshot } = usePortfolioStore();
-  const { toggleSidebar } = useUIStore();
+  const { toggleSidebar, environment, setEnvironment } = useUIStore();
   const balance = snapshot?.margin?.totalBalance?.toLocaleString() || '0';
   const { prices } = usePortfolioStore();
   const mrkPrice = prices['BTC-USD'] ? prices['BTC-USD'].toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "---";
@@ -42,6 +42,12 @@ export function TopBar() {
         </div>
         
         <div className="flex items-center space-x-3">
+          <button 
+            onClick={() => setEnvironment(environment === 'mainnet' ? 'testnet' : 'mainnet')}
+            className={`px-3 py-[10px] text-[10px] font-mono uppercase tracking-widest rounded-sm border transition-colors ${environment === 'testnet' ? 'bg-[#1E1E32] text-[#E8A035] border-[#E8A035]/30' : 'bg-bg-panel text-text-primary border-border hover:bg-white/5'}`}
+          >
+            {environment}
+          </button>
           <ThemeToggle />
           <WalletMultiButton style={{ backgroundColor: 'var(--bg-panel)', border: '1px solid var(--border)', color: 'var(--text-primary)', fontSize: '10px', height: '36px', textTransform: 'uppercase', letterSpacing: '0.1em', borderRadius: '2px' }} />
         </div>

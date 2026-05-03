@@ -118,7 +118,7 @@ export default function TradingViewChart({
         widgetRef.current = null;
       }
     };
-  }, [symbol]);
+  }, [symbol, priceMode, walletPubkey]);
 
   useEffect(() => {
     if (!ready || !widgetRef.current) return;

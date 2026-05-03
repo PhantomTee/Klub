@@ -2,10 +2,12 @@
 
 import { useEffect, useRef } from 'react';
 import { usePortfolioStore } from '../store/portfolioStore';
+import { useUIStore } from '../store/uiStore';
 import { AccountSnapshot } from '../types';
 
 export function useBulkAccount(userPubkey: string | undefined) {
   const { setSnapshot, setConnected, updateOrder, updatePosition, updateMargin } = usePortfolioStore();
+  const { environment } = useUIStore();
   const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
@@ -15,7 +17,7 @@ export function useBulkAccount(userPubkey: string | undefined) {
       return;
     }
 
-    const wsUrl = 'wss://exchange-ws1.bulk.trade';
+    const wsUrl = environment === 'testnet' ? 'wss://testnet-ws1.bulk.trade' : 'wss://exchange-ws1.bulk.trade';
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
@@ -57,5 +59,5 @@ export function useBulkAccount(userPubkey: string | undefined) {
     return () => {
       ws.close();
     };
-  }, [userPubkey, setSnapshot, setConnected]);
+  }, [userPubkey, setSnapshot, setConnected, environment]);
 }

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 
 import { usePortfolioStore } from '../store/portfolioStore';
+import { useUIStore } from '../store/uiStore';
 import { fetchL2Book } from '../lib/bulk-client';
 
 interface OrderBookLevel {
@@ -23,6 +24,7 @@ export function OrderBook({ symbol }: OrderBookProps) {
   const [priceChange, setPriceChange] = useState<'up' | 'down' | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const { setPrice } = usePortfolioStore();
+  const { environment } = useUIStore();
 
   useEffect(() => {
     const coin = symbol.split('-')[0];
@@ -54,7 +56,7 @@ export function OrderBook({ symbol }: OrderBookProps) {
       }
     }).catch(err => console.error('Initial L2 fetch error:', err));
 
-    const wsUrl = 'wss://exchange-ws1.bulk.trade';
+    const wsUrl = environment === 'testnet' ? 'wss://testnet-ws1.bulk.trade' : 'wss://exchange-ws1.bulk.trade';
     const ws = new WebSocket(wsUrl);
     
     ws.onopen = () => {
@@ -121,7 +123,7 @@ export function OrderBook({ symbol }: OrderBookProps) {
         ws.close();
       }
     };
-  }, [symbol, setPrice]);
+  }, [symbol, setPrice, environment]);
 
   const maxTotal = Math.max(
     bids.length > 0 ? bids[bids.length - 1].total : 1,
